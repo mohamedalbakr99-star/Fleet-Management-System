@@ -8510,7 +8510,7 @@ function navigate(page) {
     if (ov) ov.classList.remove('visible');
   }
   // Re-render page-specific content after navigation
-  if (key === 'maint-alarms') setTimeout(renderAlarms, 50);
+  if (key === 'maint-alarms') { setTimeout(renderAlarms, 100); setTimeout(renderAlarms, 500); }
   if (key === 'log-maint') setTimeout(initLogMaintForm, 50);
 }
 
