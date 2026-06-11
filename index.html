@@ -6896,14 +6896,7 @@ function renderAlarms() {
     }
   });
 
-  console.log('maintMap keys:', Object.keys(maintMap));
-  console.log('fleet plates:', STATE.fleet.map(v=>v.plate).slice(0,5));
-  console.log('latestKm:', latestKm);
-  // Check matching
-  STATE.fleet.forEach(v => {
-    const records = maintMap[v.plate];
-    if(records) console.log('MATCH:', v.plate, '→', Object.keys(records));
-  });
+
   let html = '', badgeCount = 0;
 
   STATE.fleet.forEach(v => {
@@ -6974,7 +6967,6 @@ function renderAlarms() {
     </div>`;
   });
 
-  console.log('html length:', html.length, 'html preview:', html.slice(0,200));
   container.innerHTML = html || '<div style="text-align:center;color:var(--text3);padding:40px;font-size:13px">✅ No alarms — log maintenance with Next KM to see alerts here</div>';
 
   const badge = document.getElementById('alarm-badge');
@@ -8102,6 +8094,7 @@ function renderMaintTable() {
   const fVeh = document.getElementById('maint-filter-veh')?.value || '';
   const fItem = document.getElementById('maint-filter-item')?.value || '';
 
+  const fSearch = (document.getElementById('maint-search')?.value||'').toLowerCase();
   // Also check search
   if (!fVeh && !fItem && !fSearch) {
     if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or item to load records</td></tr>';
