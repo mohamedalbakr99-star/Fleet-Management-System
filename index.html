@@ -1278,7 +1278,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <table>
           <thead><tr><th>Date</th><th>Company</th><th>Origin</th><th>Destination</th><th>Trucks</th><th>Unit Price</th><th>Total Cost</th><th>Note</th></tr></thead>
           <tbody id="hist-trips-tbody">
-            <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a month or filters above</td></tr>
+            <tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a month or filters above</td></tr>
           </tbody>
           <tfoot id="hist-trips-totals" style="background:var(--bg3);font-weight:700"></tfoot>
         </table>
@@ -1527,7 +1527,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <table>
           <thead><tr><th>Date</th><th>Company</th><th>Origin</th><th>Destination</th><th>Trucks</th><th>Unit Price</th><th>Total Cost</th><th>Note</th></tr></thead>
           <tbody id="trip-details-tbody">
-            <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a company or filters above to load trips</td></tr>
+            <tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a company or filters above to load trips</td></tr>
           </tbody>
           <tfoot id="trip-details-totals" style="background:var(--bg3);font-weight:700"></tfoot>
         </table>
@@ -3736,11 +3736,13 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
             <tr>
               <th>Vehicle</th><th>Type</th><th>Service Item</th>
               <th>Last KM</th><th>Next Due KM</th><th>Remaining KM</th>
-              <th>Status</th><th>💰 Cost</th><th>🧾 Invoice</th><th>Action</th>
+              <th>Status</th><th>💰 Cost</th><th>🧾 Invoice</th>
+              <th>📅 Date</th><th>🏪 Workshop</th><th>📝 Description</th><th>💬 Notes</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="alarm-tbody">
-            <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Loading...</td></tr>
+            <tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -4123,7 +4125,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <div class="tbl-wrap" style="margin-bottom:14px">
         <table>
           <thead><tr><th>Date</th><th>Plate</th><th>Type</th><th>Prev KM</th><th>Current KM</th><th>📍 KM Driven</th><th>🪣 Liters</th><th>💰 Cost</th><th>⛽ L/100km</th><th>km/L</th></tr></thead>
-          <tbody id="fh-fuel-tbody"><tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or All Vehicles</td></tr></tbody>
+          <tbody id="fh-fuel-tbody"><tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or All Vehicles</td></tr></tbody>
           <tfoot id="fh-fuel-totals" style="background:var(--bg3);font-weight:700"></tfoot>
         </table>
       </div>
@@ -5806,7 +5808,7 @@ function renderHistComp() {
   // Total sales for % calc
   const totalSales=(()=>{let s=0;(Array.isArray(STATE.salesHist)?STATE.salesHist:(STATE.salesHist?.data||[])).forEach(r=>{s+=parseAmount(r['Revenue']||r[' Revenue ']);});return s;})();
 
-  if(!entries.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:16px">No data</td></tr>';tfoot.innerHTML='';return;}
+  if(!entries.length){tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:16px">No data</td></tr>';tfoot.innerHTML='';return;}
 
   tbody.innerHTML=entries.map(([comp,v],i)=>{
     const avg=v.trips?v.cost/v.trips:0;
@@ -5847,7 +5849,7 @@ function renderHistTrips() {
   const fTo=document.getElementById('htrip-to')?.value||'';
 
   if(!fMonth&&!fComp&&!fDest&&!fFrom&&!fTo){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a month or filters above</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a month or filters above</td></tr>';
     tfoot.innerHTML=''; return;
   }
 
@@ -5886,7 +5888,7 @@ function renderHistTrips() {
     </tr>`;
   }).join('');
 
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';tfoot.innerHTML='';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';tfoot.innerHTML='';return;}
 
   tfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
     <td colspan="4" style="font-size:9px;color:var(--text3)">${rows.length} trips</td>
@@ -6443,7 +6445,7 @@ function renderTripDetails() {
   const to=document.getElementById('td-to')?.value;
 
   if(!comp&&!orig&&!dest&&!from&&!to){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select "All Companies" or filters above to load trips</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select "All Companies" or filters above to load trips</td></tr>';
     tfoot.innerHTML='';
     return;
   }
@@ -6463,7 +6465,7 @@ function renderTripDetails() {
   });
 
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No trips found</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">No trips found</td></tr>';
     tfoot.innerHTML='';
     return;
   }
@@ -6773,7 +6775,7 @@ function renderFHFuelLog() {
   }
 
   if (!plate) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or All Vehicles</td></tr>';
+    if(tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or All Vehicles</td></tr>';
     if(tfoot) tfoot.innerHTML = '';
     return;
   }
@@ -6825,7 +6827,7 @@ function renderFHFuelLog() {
   rows.sort((a,b)=>(b.date||0)-(a.date||0));
 
   if(!rows.length){
-    if(tbody) tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No records found</td></tr>';
+    if(tbody) tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">No records found</td></tr>';
     if(tfoot) tfoot.innerHTML='';
     return;
   }
@@ -6908,7 +6910,16 @@ function renderAlarms() {
     const recDate  = parseDate(r['Date']||r['date']);
     const exDate   = existing ? parseDate(existing.date) : null;
     if(!existing||(recDate&&exDate&&recDate>exDate)) {
-      maintMap[plate][item] = { nextKm, item, date: r['Date']||r['date']||'', desc: r['Description']||r['Notes']||'' };
+      maintMap[plate][item] = {
+        nextKm, item,
+        date:        r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '',
+        cost:        parseAmount(r['cost']||r['Amount']||r['amount']||0),
+        desc:        (r['Description']||'').toString().trim(),
+        notes:       (r['notes']||r['Notes']||'').toString().trim(),
+        workshop:    (r['Workshop']||'').toString().trim(),
+        invNo:       (r['invoice no']||r['Invoice No']||'').toString().trim(),
+        changeAfter: parseAmount(r['Change after']||0),
+      };
     }
   });
 
@@ -7030,7 +7041,7 @@ function renderAlarms() {
     });
     allRows.sort((a,b) => a.remaining - b.remaining);
     if(!allRows.length){
-      alarmTbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No maintenance records with alarm KM — log maintenance first</td></tr>';
+      alarmTbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">No maintenance records with alarm KM — log maintenance first</td></tr>';
     } else {
       const tb = {'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
       alarmTbody.innerHTML = allRows.map(r => `<tr>
@@ -7043,22 +7054,11 @@ function renderAlarms() {
         <td style="color:${r.col}">${r.status}</td>
         <td style="color:var(--amber)">${r.cost?fmt(r.cost):'—'}</td>
         <td style="color:var(--text3);font-size:10px">${r.invNo||'—'}</td>
-        <td style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" style="font-size:9px" onclick="toggleAlarmRowDetail('${r.plate.replace(/\s/g,'_')}_${r.item.replace(/[^a-zA-Z0-9]/g,'_')}')">👁️ View</button>
-          <button class="btn btn-ghost btn-sm" style="font-size:9px" onclick="navigate('log-maint')">🔧 Log</button>
-        </td>
-      </tr>
-      <tr id="alarmrow-${r.plate.replace(/\s/g,'_')}_${r.item.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none">
-        <td colspan="10" style="background:var(--bg3);padding:12px 16px">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;font-size:11px">
-            <div><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">📅 Last Service Date</div><div style="color:var(--text);font-weight:600">${r.date||'—'}</div></div>
-            <div><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">🧾 Invoice No</div><div style="color:var(--text);font-weight:600">${r.invNo||'—'}</div></div>
-            <div><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">🏪 Workshop</div><div style="color:var(--text);font-weight:600">${r.workshop||'—'}</div></div>
-            <div><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">🔧 Change After</div><div style="color:var(--text);font-weight:600">${r.changeAfter?r.changeAfter.toLocaleString()+' km':'—'}</div></div>
-            <div style="grid-column:1/-1"><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">📝 Work Description</div><div style="color:var(--text)">${r.desc||'—'}</div></div>
-            <div style="grid-column:1/-1"><div style="color:var(--text3);font-size:9px;text-transform:uppercase;margin-bottom:3px">💬 Notes</div><div style="color:var(--text)">${r.notes||'—'}</div></div>
-          </div>
-        </td>
+        <td style="font-size:10px">${r.date||'—'}</td>
+        <td style="font-size:10px">${r.workshop||'—'}</td>
+        <td style="font-size:10px;max-width:200px;word-wrap:break-word;white-space:normal">${r.desc||'—'}</td>
+        <td style="font-size:10px;max-width:200px;word-wrap:break-word;white-space:normal">${r.notes||'—'}</td>
+        <td><button class="btn btn-ghost btn-sm" style="font-size:9px" onclick="navigate('log-maint')">🔧 Log</button></td>
       </tr>`).join('');
     }
   }
@@ -7999,11 +7999,11 @@ function renderRentalHist(){
   const tripsTbody=document.getElementById('rh-trips-tbody');
   const tripsTfoot=document.getElementById('rh-trips-totals');
   if(!fMonth&&!fComp&&!fDest){
-    tripsTbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select month, company, or destination to load trips</td></tr>';
+    tripsTbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select month, company, or destination to load trips</td></tr>';
     tripsTfoot.innerHTML=''; return;
   }
   if(!trips.length){
-    tripsTbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';
+    tripsTbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';
     tripsTfoot.innerHTML=''; return;
   }
   let tC=0,tT=0;
@@ -8203,7 +8203,7 @@ function renderMaintTable() {
   const fSearch = (document.getElementById('maint-search')?.value||'').toLowerCase();
   // Also check search
   if (!fVeh && !fItem && !fSearch) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or item to load records</td></tr>';
+    if(tbody) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or item to load records</td></tr>';
     return;
   }
 
