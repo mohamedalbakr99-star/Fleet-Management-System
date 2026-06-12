@@ -7050,21 +7050,68 @@ function toggleAlarmDetail(vId) {
 
 
 function exportAlarms() {
-  let csv = 'Vehicle,Type,Item,Last KM,Next Due KM,Remaining KM,Status\n';
-  document.querySelectorAll('#alarm-tbody tr').forEach(tr => {
-    csv += [...tr.querySelectorAll('td')].slice(0,7).map(td=>`"${td.textContent.trim()}"`).join(',') + '\n';
+  // Get current allRows from the maintMap (rebuild from state)
+  const kmOverrides = {}; // No overrides now
+  const latestKm = {};
+  STATE.fuel.forEach(r => {
+    const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
+    const v = STATE.fleet.find(v2 => {
+      if(v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim()===rNorm;
+      return extractDigits(v2.plate)===extractDigits(rNorm);
+    });
+    if(!v) return;
+    const km = parseAmount(r['عداد الكيلومتر']||r['KM']);
+    if(km > (latestKm[v.plate]||0)) latestKm[v.plate] = km;
   });
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='alarms.csv'; a.click();
-  URL.revokeObjectURL(url);
+
+  const maintMap = {};
+  STATE.maintenance.forEach(r => {
+    const plate  = (r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const item   = (r['Category']||r['Item']||r['item']||'').trim();
+    const nextKm = parseAmount(r['Alarm KM ']||r['Alarm KM']||0);
+    if(!plate||!item||!nextKm) return;
+    if(!maintMap[plate]) maintMap[plate] = {};
+    maintMap[plate][item] = {
+      item, nextKm,
+      date:     r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '',
+      cost:     parseAmount(r['cost']||r['Amount']||0),
+      desc:     (r['Description']||'').toString().trim(),
+      notes:    (r['notes']||r['Notes']||'').toString().trim(),
+      workshop: (r['Workshop']||'').toString().trim(),
+      invNo:    (r['invoice no']||r['Invoice No']||'').toString().trim(),
+      changeAfter: parseAmount(r['Change after']||0),
+    };
+  });
+
+  // Build rows
+  const rows = [];
+  STATE.fleet.forEach(v => {
+    const recs = maintMap[v.plate];
+    if(!recs) return;
+    const curKm = latestKm[v.plate] || 0;
+    Object.values(recs).forEach(rec => {
+      const remaining = rec.nextKm - curKm;
+      const status = remaining<=0?'Overdue':remaining<=300?'Urgent':remaining<=1000?'Soon':'OK';
+      rows.push({plate:v.plate, type:plateType(v.plate), ...rec, curKm, remaining, status});
+    });
+  });
+  rows.sort((a,b) => a.remaining - b.remaining);
+
+  const headers = ['Vehicle','Type','Item','Current KM','Alarm KM','Remaining','Status','Cost','Invoice','Date','Workshop','Change After','Description','Notes'];
+  let csv = headers.join(',') + '\n';
+  rows.forEach(r => {
+    const vals = [r.plate, r.type, r.item, r.curKm, r.nextKm, r.remaining, r.status,
+      r.cost, r.invNo, r.date, r.workshop, r.changeAfter, r.desc, r.notes];
+    csv += vals.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'alarms_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
 }
 
-// ── Vehicle Summary Table State ──
-let _vehSearch = '';
-let _fhSearch = '';
-let _logFleet = 'all';
-let _vehTab = 'all', _vehSort = 'fuel', _vehSortAsc = false;
 
 function renderFleetHist(){
   const fMonth=document.getElementById('fh-month')?.value||'all';
