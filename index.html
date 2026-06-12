@@ -7288,7 +7288,7 @@ function renderFleetKPIs() {
       fuel+=parseAmount(r['التكلفة']||r['Cost']);liters+=parseAmount(r['عدد اللترات']||r['Liters']);
       const km=parseAmount(r['عداد الكيلومتر']||r['KM']);if(km>lastKm)lastKm=km;if(km>0&&(firstKm===0||km<firstKm))firstKm=km;
     });
-    STATE.maintenance.forEach(r=>{const date=parseDate(r['Date']||r['date']);if(!date||!isCurrentMonth(date))return;if((r['Plate']||'').trim()===v.plate){maint+=parseAmount(r['Amount']||r['amount']);inv++;}});
+    STATE.maintenance.forEach(r=>{const date=parseDate(r['Date']||r['date']);if(!date||!isCurrentMonth(date))return;if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}});
     const base=getBaselineKM(v.plate,lastKm)||0;
     const kmd=lastKm>base?lastKm-base:(firstKm>0&&lastKm>firstKm?lastKm-firstKm:0);
     totKm+=kmd;totFuel+=fuel;totMaint+=maint;totLiters+=liters;totInv+=inv;
@@ -7376,7 +7376,7 @@ function renderFleetHistKPIs() {
       const date=parseDate(r['Date']||r['date']);
       if(!date) return;
       if(fMonth!=='all'&&getMonthKey(date)!==fMonth) return;
-      if((r['Plate']||'').trim()===v.plate){maint+=parseAmount(r['Amount']||r['amount']);inv++;}
+      if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}
     });
 
     const base=getBaselineKM(v.plate,lastKm)||0;
