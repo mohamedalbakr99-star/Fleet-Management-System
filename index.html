@@ -283,6 +283,37 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 </style>
 </head>
 <body>
+<script>
+(function(){
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+        (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S'))) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  document.addEventListener('selectstart', e => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+      e.preventDefault();
+    }
+  });
+  let devtools = false;
+  setInterval(() => {
+    const threshold = 160;
+    if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+      if (!devtools) {
+        devtools = true;
+        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0d0f14;color:#e24b4a;font-family:sans-serif;font-size:24px;text-align:center;padding:20px">🔒 Access Denied<br><br><span style="font-size:14px;color:#888">Developer tools are not allowed</span></div>';
+      }
+    } else {
+      devtools = false;
+    }
+  }, 1000);
+})();
+</script>
+
 
 
 
