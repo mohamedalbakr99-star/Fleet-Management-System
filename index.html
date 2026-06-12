@@ -6876,9 +6876,8 @@ function renderAlarms() {
   const fStatus   = document.getElementById('alarm-status-filter')?.value || '';
   if (!container) return;
 
-  // ── Get latest KM per vehicle (with overrides) ──
-  const kmOverrides = JSON.parse(localStorage.getItem('zfi_km_overrides')||'{}');
-  const latestKm = Object.assign({}, kmOverrides);
+  // ── Get latest KM per vehicle ──
+  const latestKm = {};
   STATE.fuel.forEach(r => {
     const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
     const v = STATE.fleet.find(v2 => {
@@ -6887,7 +6886,7 @@ function renderAlarms() {
     });
     if(!v) return;
     const km = parseAmount(r['عداد الكيلومتر']||r['KM']);
-    if(kmOverrides[v.plate]) return; if(km > (latestKm[v.plate]||0)) latestKm[v.plate] = km;
+    if(km > (latestKm[v.plate]||0)) latestKm[v.plate] = km;
   });
 
   // ── Get maintenance records with next_km ──
@@ -6967,6 +6966,7 @@ function renderAlarms() {
             <th style="text-align:right;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Next KM</th>
             <th style="text-align:right;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Remaining</th>
             <th style="text-align:left;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Last Date</th>
+            <th style="text-align:left;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Invoice</th>
             <th style="padding:5px 8px;border-bottom:1px solid var(--border)"></th>
           </tr></thead>
           <tbody>
@@ -6979,6 +6979,7 @@ function renderAlarms() {
                 <td style="padding:6px 8px;text-align:right;font-weight:700">${a.nextKm.toLocaleString()}</td>
                 <td style="padding:6px 8px;text-align:right;color:${col};font-weight:700">${a.remaining<=0?'OVERDUE':'+'+a.remaining.toLocaleString()+' km'} <span style="font-size:9px">${tag}</span></td>
                 <td style="padding:6px 8px;color:var(--text3)">${a.date?a.date.slice(0,10):'—'}</td>
+                <td style="padding:6px 8px;color:var(--text3);font-size:10px">${a.invNo||'—'}</td>
                 <td style="padding:6px 8px">
                   <button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 8px"
                     onclick="navigate('log-maint');setTimeout(()=>{const s=document.getElementById('inv-plate');if(s)s.value='${v.plate}';const i=document.getElementById('inv-item');if(i)i.value='${a.item}';updateNextKM();},300)">✅ Log Service</button>
@@ -7018,7 +7019,7 @@ function renderAlarms() {
         if(fStatus==='ok' && remaining<=300) return;
         const col = remaining<=0?'var(--red)':remaining<=300?'#ff6b35':remaining<=1000?'var(--amber)':'var(--green)';
         const status = remaining<=0?'🔴 Overdue':remaining<=300?'🟠 Urgent':remaining<=1000?'🟡 Soon':'🟢 OK';
-        allRows.push({plate:v.plate, type, item:rec.item, curKm, nextKm:rec.nextKm, remaining, col, status, cost:rec.cost||0});
+        allRows.push({plate:v.plate, type, item:rec.item, curKm, nextKm:rec.nextKm, remaining, col, status, cost:rec.cost||0, invNo:rec.invNo||''});
       });
     });
     allRows.sort((a,b) => a.remaining - b.remaining);
@@ -7035,10 +7036,8 @@ function renderAlarms() {
         <td style="color:${r.col};font-weight:700">${r.remaining<=0?'OVERDUE':'+'+r.remaining.toLocaleString()+' km'}</td>
         <td style="color:${r.col}">${r.status}</td>
         <td style="color:var(--amber)">${r.cost?fmt(r.cost):'—'}</td>
-        <td style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" style="font-size:9px" onclick="navigate('log-maint')">🔧 Log</button>
-          <button class="btn btn-ghost btn-sm" style="font-size:9px;color:var(--blue)" onclick="updateVehicleKM('${r.plate}','${r.item}',${r.nextKm})">📍 Update KM</button>
-        </td>
+        <td style="color:var(--text3);font-size:10px">${r.invNo||'—'}</td>
+        <td><button class="btn btn-ghost btn-sm" style="font-size:9px" onclick="navigate('log-maint')">🔧 Log</button></td>
       </tr>`).join('');
     }
   }
