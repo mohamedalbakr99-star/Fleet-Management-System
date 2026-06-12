@@ -6872,10 +6872,13 @@ function exportFHFuel() {
 function renderAlarms() {
   const container = document.getElementById('alarm-cards') || document.getElementById('alarms-container');
   const fPlate    = document.getElementById('alarm-plate-filter')?.value || '';
+  const fType     = document.getElementById('alarm-type-filter')?.value || '';
+  const fStatus   = document.getElementById('alarm-status-filter')?.value || '';
   if (!container) return;
 
-  // ── Get latest KM per vehicle ──
-  const latestKm = {};
+  // ── Get latest KM per vehicle (with overrides) ──
+  const kmOverrides = JSON.parse(localStorage.getItem('zfi_km_overrides')||'{}');
+  const latestKm = Object.assign({}, kmOverrides);
   STATE.fuel.forEach(r => {
     const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
     const v = STATE.fleet.find(v2 => {
@@ -6884,7 +6887,7 @@ function renderAlarms() {
     });
     if(!v) return;
     const km = parseAmount(r['عداد الكيلومتر']||r['KM']);
-    if(km > (latestKm[v.plate]||0)) latestKm[v.plate] = km;
+    if(kmOverrides[v.plate]) return; if(km > (latestKm[v.plate]||0)) latestKm[v.plate] = km;
   });
 
   // ── Get maintenance records with next_km ──
@@ -6915,6 +6918,13 @@ function renderAlarms() {
 
   STATE.fleet.forEach(v => {
     if(fPlate && v.plate !== fPlate) return;
+    const vType = plateType(v.plate);
+    // Type filter handles legacy values
+    if(fType) {
+      const typeMap = {'Transfer':'Shuttling Trucks','Online':'Local Trucks','Support':'ZF Employee Vehicles'};
+      const wanted = typeMap[fType] || fType;
+      if(vType !== wanted) return;
+    }
     const records = maintMap[v.plate];
     if(!records || !Object.keys(records).length) return; // Skip if no maint records
 
@@ -6993,10 +7003,19 @@ function renderAlarms() {
     STATE.fleet.forEach(v => {
       const records = maintMap[v.plate];
       if(!records) return;
-      const curKm = latestKm[v.plate] || 0;
+      if(fPlate && v.plate !== fPlate) return;
       const type  = plateType(v.plate);
+      if(fType) {
+        const typeMap = {'Transfer':'Shuttling Trucks','Online':'Local Trucks','Support':'ZF Employee Vehicles'};
+        const wanted = typeMap[fType] || fType;
+        if(type !== wanted) return;
+      }
+      const curKm = latestKm[v.plate] || 0;
       Object.values(records).forEach(rec => {
         const remaining = rec.nextKm - curKm;
+        if(fStatus==='overdue' && remaining>0) return;
+        if(fStatus==='due-soon' && (remaining<=0 || remaining>300)) return;
+        if(fStatus==='ok' && remaining<=300) return;
         const col = remaining<=0?'var(--red)':remaining<=300?'#ff6b35':remaining<=1000?'var(--amber)':'var(--green)';
         const status = remaining<=0?'🔴 Overdue':remaining<=300?'🟠 Urgent':remaining<=1000?'🟡 Soon':'🟢 OK';
         allRows.push({plate:v.plate, type, item:rec.item, curKm, nextKm:rec.nextKm, remaining, col, status, cost:rec.cost||0});
@@ -8455,12 +8474,17 @@ function getMaintCostByType(monthKey, type) {
 }
 
 function updateVehicleKM(plate, item, currentNextKm) {
-  const newKm = prompt(`Update KM for ${plate}\nCurrent Next Service: ${currentNextKm.toLocaleString()} km\n\nEnter new current KM reading:`);
+  const newKm = prompt(`Update KM for ${plate}\nNext Service: ${currentNextKm.toLocaleString()} km\n\nEnter new current KM reading:`);
   if (!newKm || isNaN(+newKm)) return;
+  // Store the updated KM in localStorage to persist across renders
+  const overrides = JSON.parse(localStorage.getItem('zfi_km_overrides')||'{}');
+  overrides[plate] = +newKm;
+  localStorage.setItem('zfi_km_overrides', JSON.stringify(overrides));
   
   const curKm = parseFloat(newKm);
   const remaining = currentNextKm - curKm;
   
+  setTimeout(renderAlarms, 100);
   if (remaining > 0) {
     alert(`✅ KM Updated!\n${plate} — ${item}\nCurrent: ${curKm.toLocaleString()} km\nNext Service: ${currentNextKm.toLocaleString()} km\nRemaining: ${remaining.toLocaleString()} km`);
   } else {
