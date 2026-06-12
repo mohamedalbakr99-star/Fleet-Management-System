@@ -7466,9 +7466,9 @@ function renderVehicleTable() {
     STATE.maintenance.forEach(r => {
       const date = parseDate(r['Date']||r['date']);
       const isCM = isCurrentMonth(date);
-      if(!isCM) { if(v.plate==='VRB 4654') console.log('Skip (not current month):', r['Date'], date); return; }
+      if(!isCM) { console.log('Skip:', r['Date'], 'parsed:', date, 'currentMonth?', isCM); return; }
       const mPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-      if(v.plate==='VRB 4654') console.log('Check:', mPlate, 'vs', v.plate, 'cost:', r['cost']);
+      if(v.plate.includes('VRB')||v.plate.includes('EDA')||v.plate.includes('TSA')) console.log('Check:', mPlate, 'vs', v.plate, 'cost:', r['cost'], 'match:', mPlate===v.plate);
       if(mPlate===v.plate) { maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0); invoices++; }
     });
 
