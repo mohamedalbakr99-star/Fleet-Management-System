@@ -7959,6 +7959,8 @@ function renderRentalHist(){
   let rhTotalSales=0, rhSelfS=0, rhVendorS=0;
   const hist = Array.isArray(STATE.salesHist)?STATE.salesHist:(STATE.salesHist?.data||[]);
   const cur = Array.isArray(STATE.sales)?STATE.sales:(STATE.sales?.data||[]);
+  console.log('Sales count:', hist.length, '+', cur.length);
+  if(hist[0]) console.log('Sample sale:', hist[0]);
   [...hist,...cur].forEach(r=>{
     const date=parseDate(r['Date ']||r['Date']||r['date']);
     if(!date||isNaN(date)) return;
@@ -7968,6 +7970,7 @@ function renderRentalHist(){
     const code=r['Customer Code ']||r['Customer Code']||'';
     const name=r['Customer Name ']||r['Customer Name']||'';
     rhTotalSales+=rev;
+    if(rhTotalSales===rev) console.log('First match:', date, mk, rev);
     if(isVendorCustomer(code,name)) rhVendorS+=rev; else rhSelfS+=rev;
   });
 
