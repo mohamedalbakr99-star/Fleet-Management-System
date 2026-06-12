@@ -8097,6 +8097,14 @@ function renderFuelTable() {
     sel.innerHTML = '<option value="">All Vehicles</option>' + STATE.fleet.map(v => `<option>${v.plate}</option>`).join('');
   }
 
+  const fSearch = (document.getElementById('fuel-filter-search')?.value || '').toLowerCase();
+  
+  // Empty by default - require filter
+  if (!fVeh && !fCity && !fType && !fSearch) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load fuel records</td></tr>';
+    return;
+  }
+
   if (!STATE.fuel || STATE.fuel.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">No fuel data</td></tr>';
     return;
@@ -8231,8 +8239,11 @@ function renderMaintTable() {
   }
 
   const rows = STATE.maintenance.filter(r => {
-    if (fVeh && (r['Truck Plate']||r['Plate']||r['plate']||'').trim() !== fVeh) return false;
-    if (fItem && (r['Category']||r['Category']||r['Item']||r['item']||'').trim() !== fItem) return false;
+    const mPlate = (r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const mItem = (r['Category']||r['Item']||r['item']||'').trim();
+    if (fVeh && mPlate !== fVeh) return false;
+    if (fItem && mItem !== fItem) return false;
+    if (fSearch && !mPlate.toLowerCase().includes(fSearch) && !mItem.toLowerCase().includes(fSearch) && !(r['invoice no']||r['Invoice No']||'').toString().toLowerCase().includes(fSearch) && !(r['Workshop']||'').toLowerCase().includes(fSearch)) return false;
     return true;
   }).sort((a,b) => {
     const da = parseDate(a['Date']||a['date']);
@@ -8765,6 +8776,44 @@ function downloadForNetlify(){
   const a=document.createElement('a');a.href=url;a.download='index.html';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
+
+
+// Chart filter with multi-select
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.fleet-filter-tabs .fct').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      const type = tab.dataset.type;
+      const container = tab.parentElement;
+      const isShiftClick = e.shiftKey || e.ctrlKey;
+      
+      if (type === 'all') {
+        // All clears multi-select
+        container.querySelectorAll('.fct').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      } else {
+        const allTab = container.querySelector('.fct[data-type="all"]');
+        if (allTab) allTab.classList.remove('active');
+        if (isShiftClick) {
+          // Toggle individual
+          tab.classList.toggle('active');
+        } else {
+          // Single select
+          container.querySelectorAll('.fct').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+        }
+      }
+      
+      // Collect active filters
+      const active = [...container.querySelectorAll('.fct.active')].map(t => t.dataset.type);
+      if (active.length === 0 || active.includes('all')) {
+        STATE.filter.chart = 'all';
+      } else {
+        STATE.filter.chart = active.join(',');
+      }
+      renderFleetChart();
+    });
+  });
+});
 
 // Boot
 (async function() {
