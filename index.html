@@ -4815,6 +4815,15 @@ function parseDate(s) {
   if (m2) {
     return new Date(Date.UTC(parseInt(m2[3]), parseInt(m2[2])-1, parseInt(m2[1])));
   }
+  // Format: ISO with timezone "2026-06-12T21:00:00.000Z" - use local date
+  const mIso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{2}):/);
+  if (mIso) {
+    // If hours >= 20 (Apps Script GMT+3 midnight), treat as next day
+    const hours = parseInt(mIso[4]);
+    const d = new Date(s);
+    // Use local time interpretation
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
   // Format: "2026-06-02" or "2026-06-02 17:37:41"
   const m3 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (m3) {
