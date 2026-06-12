@@ -3595,9 +3595,9 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
           <input type="number" class="form-input" id="inv-amount" placeholder="0.00" style="width:100%">
         </div>
         <div>
-          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">📍 Current KM (auto)</div>
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:13px;font-weight:700;color:var(--green)" id="inv-km-display">— Select vehicle first</div>
-          <input type="hidden" id="inv-km">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">📍 Current KM (editable)</div>
+          <input type="number" class="form-input" id="inv-km" placeholder="Select vehicle first" style="width:100%;font-weight:700;color:var(--green)" oninput="updateNextKM()">
+          <div id="inv-km-display" style="display:none"></div>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Workshop</div>
@@ -8319,10 +8319,7 @@ function updateNextKM() {
       kmInput.value = autoKm;
       lastKm = autoKm;
     }
-    if(kmDisp) {
-      if (autoKm > 0) kmDisp.textContent = 'Auto from fuel: '+autoKm.toLocaleString()+' km (editable above)';
-      else kmDisp.textContent = '— No fuel data yet — enter manually';
-    }
+    // No subtitle text - just populate the input
   }
 
   // Auto-fill interval from item default
