@@ -4520,8 +4520,8 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 const API = 'https://script.google.com/macros/s/AKfycbzEszwm2fIzPrhyZyLf4pJaFPcrOEOtaihhqmwUIVYIcabO1lbbMjCAMggGhM6Pbo7zIg/exec';
 
 const SOURCES = {
-  sales:         API + '?type=main',
-  salesHist:     API + '?type=hist',
+  sales:         API + '?type=main&origin=' + encodeURIComponent(location.hostname),
+  salesHist:     API + '?type=hist&origin=' + encodeURIComponent(location.hostname),
   daily:         API + '?type=daily&origin=' + encodeURIComponent(location.hostname),
   prices:        API + '?type=prices&origin=' + encodeURIComponent(location.hostname),
   fuel:          API + '?type=fuel&origin=' + encodeURIComponent(location.hostname),
