@@ -283,6 +283,44 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 </style>
 </head>
 <body>
+<script>
+(function(){
+  // Disable right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  
+  // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+Shift+C
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+        (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S'))) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  
+  // Disable text selection
+  document.addEventListener('selectstart', e => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+      e.preventDefault();
+    }
+  });
+  
+  // Detect DevTools open (resize trick)
+  let devtools = false;
+  setInterval(() => {
+    const threshold = 160;
+    if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+      if (!devtools) {
+        devtools = true;
+        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0d0f14;color:#e24b4a;font-family:sans-serif;font-size:24px;text-align:center;padding:20px">🔒 Access Denied<br><br><span style="font-size:14px;color:#888">Developer tools are not allowed</span></div>';
+      }
+    } else {
+      devtools = false;
+    }
+  }, 1000);
+})();
+</script>
+
 
 <!-- SIDEBAR -->
 <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Menu">
@@ -4515,16 +4553,16 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 
 
 
-const API = 'https://script.google.com/macros/s/AKfycbxtRRiEiLF9UW2adQGa1e6x24Oit41c_7A8WWbbpLNP7rYdj8GCegj6QAp_U0snMmIS/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzEszwm2fIzPrhyZyLf4pJaFPcrOEOtaihhqmwUIVYIcabO1lbbMjCAMggGhM6Pbo7zIg/exec';
 
 const SOURCES = {
   sales:         API + '?type=main',
   salesHist:     API + '?type=hist',
-  daily:         API + '?type=daily',
-  prices:        API + '?type=prices',
-  fuel:          API + '?type=fuel',
-  maintenance:   API + '?type=maintenance',
-  vendorClients: API + '?type=vendor_clients',
+  daily:         API + '?type=daily&origin=' + encodeURIComponent(location.hostname),
+  prices:        API + '?type=prices&origin=' + encodeURIComponent(location.hostname),
+  fuel:          API + '?type=fuel&origin=' + encodeURIComponent(location.hostname),
+  maintenance:   API + '?type=maintenance&origin=' + encodeURIComponent(location.hostname),
+  vendorClients: API + '?type=vendor_clients&origin=' + encodeURIComponent(location.hostname),
 };
 
 // Default Fleet (fallback if vehicles sheet fails)
@@ -7841,7 +7879,7 @@ async function saveMaintenanceRecord() {
 
   try {
     // Use no-cors mode (CORS workaround for Apps Script)
-    await fetch('https://script.google.com/macros/s/AKfycbxtRRiEiLF9UW2adQGa1e6x24Oit41c_7A8WWbbpLNP7rYdj8GCegj6QAp_U0snMmIS/exec', {
+    await fetch('https://script.google.com/macros/s/AKfycbzEszwm2fIzPrhyZyLf4pJaFPcrOEOtaihhqmwUIVYIcabO1lbbMjCAMggGhM6Pbo7zIg/exec', {
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type': 'text/plain'},
