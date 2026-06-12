@@ -8162,6 +8162,7 @@ function renderMaintTable() {
       <td style="color:var(--green)">${rNext?rNext.toLocaleString():'—'}</td>
       <td>${rWs||'—'}</td>
       <td style="color:var(--text3);font-size:10px">${rNotes||'—'}</td>
+      <td style="color:var(--text3);font-size:10px">${(r['Description']||r['description']||'')}</td>
     </tr>`;
   }).join('');
 }
