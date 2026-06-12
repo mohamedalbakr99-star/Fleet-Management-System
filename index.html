@@ -3561,7 +3561,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <div>
           <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Vehicle Plate *</div>
           <input type="text" id="inv-plate-search" class="form-input" placeholder="🔍 Type plate..." style="width:100%;margin-bottom:4px" oninput="filterPlateOptions(this.value)"/>
-          <select class="form-select" id="inv-plate" style="width:100%" onchange="updateNextKM()" onfocus="this.previousElementSibling&&this.previousElementSibling.value&&filterPlateOptions(this.previousElementSibling.value)"><option value="">Select vehicle...</option><option value="RRB 3498">RRB 3498 — Shuttling Trucks</option><option value="VRB 4654">VRB 4654 — Shuttling Trucks</option><option value="TSB 2096">TSB 2096 — Shuttling Trucks</option><option value="GZA 1973">GZA 1973 — Shuttling Trucks</option><option value="EDA 4916">EDA 4916 — Local Trucks</option><option value="TSA 5955">TSA 5955 — Local Trucks</option><option value="LSA 1134">LSA 1134 — Local Trucks</option><option value="TSA 5630">TSA 5630 — Local Trucks</option><option value="XSA 6961">XSA 6961 — Local Trucks</option><option value="EDA 4919">EDA 4919 — Local Trucks</option><option value="HSA 3325">HSA 3325 — ZF Employee Vehicles</option><option value="HSA 3326">HSA 3326 — Local Trucks</option><option value="XSA 6962">XSA 6962 — Local Trucks</option><option value="HAS 3324">HAS 3324 — Local Trucks</option><option value="TSA 5821">TSA 5821 — Local Trucks</option><option value="TSA 5820">TSA 5820 — Local Trucks</option><option value="KGA 8879">KGA 8879 — Local Trucks</option><option value="KBB 3497">KBB 3497 — Local Trucks</option><option value="TSA 5694">TSA 5694 — Local Trucks</option><option value="TSB 4800">TSB 4800 — Local Trucks</option><option value="HSA 3238">HSA 3238 — Local Trucks</option><option value="TSA 5693">TSA 5693 — Local Trucks</option><option value="TSA 5700">TSA 5700 — ZF Employee Vehicles</option><option value="TSA 5601">TSA 5601 — ZF Employee Vehicles</option><option value="KSB 3325">KSB 3325 — ZF Employee Vehicles</option></select>
+          <select class="form-select" id="inv-plate" style="width:100%" onchange="document.getElementById('inv-km').value='';updateNextKM()" onfocus="this.previousElementSibling&&this.previousElementSibling.value&&filterPlateOptions(this.previousElementSibling.value)"><option value="">Select vehicle...</option><option value="RRB 3498">RRB 3498 — Shuttling Trucks</option><option value="VRB 4654">VRB 4654 — Shuttling Trucks</option><option value="TSB 2096">TSB 2096 — Shuttling Trucks</option><option value="GZA 1973">GZA 1973 — Shuttling Trucks</option><option value="EDA 4916">EDA 4916 — Local Trucks</option><option value="TSA 5955">TSA 5955 — Local Trucks</option><option value="LSA 1134">LSA 1134 — Local Trucks</option><option value="TSA 5630">TSA 5630 — Local Trucks</option><option value="XSA 6961">XSA 6961 — Local Trucks</option><option value="EDA 4919">EDA 4919 — Local Trucks</option><option value="HSA 3325">HSA 3325 — ZF Employee Vehicles</option><option value="HSA 3326">HSA 3326 — Local Trucks</option><option value="XSA 6962">XSA 6962 — Local Trucks</option><option value="HAS 3324">HAS 3324 — Local Trucks</option><option value="TSA 5821">TSA 5821 — Local Trucks</option><option value="TSA 5820">TSA 5820 — Local Trucks</option><option value="KGA 8879">KGA 8879 — Local Trucks</option><option value="KBB 3497">KBB 3497 — Local Trucks</option><option value="TSA 5694">TSA 5694 — Local Trucks</option><option value="TSB 4800">TSB 4800 — Local Trucks</option><option value="HSA 3238">HSA 3238 — Local Trucks</option><option value="TSA 5693">TSA 5693 — Local Trucks</option><option value="TSA 5700">TSA 5700 — ZF Employee Vehicles</option><option value="TSA 5601">TSA 5601 — ZF Employee Vehicles</option><option value="KSB 3325">KSB 3325 — ZF Employee Vehicles</option></select>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Maintenance Item *</div>
@@ -8298,8 +8298,10 @@ function updateNextKM() {
   const subEl   = document.getElementById('next-km-sub');
   const kmDisp  = document.getElementById('inv-km-display');
 
-  // Auto-get last KM from fuel records
-  let lastKm = 0;
+  // Auto-get last KM from fuel records (only if input is empty)
+  const kmInput = document.getElementById('inv-km');
+  let lastKm = parseFloat(kmInput?.value) || 0;
+  let autoKm = 0;
   if (plate) {
     STATE.fuel.forEach(r => {
       const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
@@ -8309,12 +8311,18 @@ function updateNextKM() {
       });
       if(v && v.plate===plate){
         const km = parseAmount(r['عداد الكيلومتر']||r['KM']);
-        if(km > lastKm) lastKm = km;
+        if(km > autoKm) autoKm = km;
       }
     });
-    const hidKm = document.getElementById('inv-km');
-    if(hidKm) hidKm.value = lastKm;
-    if(kmDisp) kmDisp.textContent = lastKm>0 ? lastKm.toLocaleString()+' km' : '— No fuel data yet';
+    // If input empty, auto-fill with last fuel KM
+    if (!lastKm && autoKm > 0 && kmInput) {
+      kmInput.value = autoKm;
+      lastKm = autoKm;
+    }
+    if(kmDisp) {
+      if (autoKm > 0) kmDisp.textContent = 'Auto from fuel: '+autoKm.toLocaleString()+' km (editable above)';
+      else kmDisp.textContent = '— No fuel data yet — enter manually';
+    }
   }
 
   // Auto-fill interval from item default
