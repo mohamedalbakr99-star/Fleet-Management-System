@@ -4144,8 +4144,9 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <select class="form-select" id="fh-maint-item" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
           <option value="">All Items</option>
         </select>
-        <input type="date" id="fh-maint-from" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFleetMaintDetails()">
-        <input type="date" id="fh-maint-to" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFleetMaintDetails()">
+        <select class="form-select" id="fh-maint-month" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Months</option>
+        </select>
         <button class="btn btn-ghost btn-sm" onclick="exportFleetMaint()">📥 Export</button>
       </div>
       <div class="tbl-wrap">
@@ -8319,8 +8320,24 @@ function filterFuelPlate(val) {
 function renderFleetMaintDetails(){
   const plate=document.getElementById('fh-maint-plate')?.value||'';
   const item=document.getElementById('fh-maint-item')?.value||'';
-  const from=document.getElementById('fh-maint-from')?.value||'';
-  const to=document.getElementById('fh-maint-to')?.value||'';
+  const month=document.getElementById('fh-maint-month')?.value||'';
+  
+  // Populate month selector once
+  const monSel = document.getElementById('fh-maint-month');
+  if(monSel && monSel.children.length <= 1) {
+    const months = new Set();
+    STATE.maintenance.forEach(r => {
+      if(r['Date']) {
+        const d = new Date(r['Date']);
+        if(!isNaN(d)) months.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+      }
+    });
+    [...months].sort().reverse().forEach(mk => {
+      const d = new Date(mk+'-01');
+      const label = d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+      monSel.innerHTML += '<option value="'+mk+'">'+label+'</option>';
+    });
+  }
   const tbody=document.getElementById('fleet-maint-tbody');
   const tfoot=document.getElementById('fleet-maint-totals');
 
@@ -8342,8 +8359,7 @@ function renderFleetMaintDetails(){
     if(fType && rType!==fType) return false;
     if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
     const dk=r['Date']||'';
-    if(from&&dk<from) return false;
-    if(to&&dk>to) return false;
+    if(month) { const rMk = dk.slice(0,7); if(rMk!==month) return false; }
     return true;
   });
 
