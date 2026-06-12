@@ -4131,24 +4131,26 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <!-- Maintenance Details -->
       <div style="font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Maintenance History — Select vehicle to load</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <input type="text" id="fh-maint-search" class="form-input" placeholder="🔍 Search plate/category..." style="padding:5px 8px;font-size:11px;width:200px" oninput="renderFleetMaintDetails()"/>
+        <select class="form-select" id="fh-maint-type" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Types</option>
+          <option value="Shuttling Trucks">Shuttling Trucks</option>
+          <option value="Local Trucks">Local Trucks</option>
+          <option value="ZF Employee Vehicles">ZF Employee Vehicles</option>
+        </select>
         <select class="form-select" id="fh-maint-plate" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
-          <option value="">Select Vehicle...</option>
+          <option value="">All Vehicles</option>
         <option value="RRB 3498">RRB 3498 (Shuttling Trucks)</option><option value="VRB 4654">VRB 4654 (Shuttling Trucks)</option><option value="TSB 2096">TSB 2096 (Shuttling Trucks)</option><option value="GZA 1973">GZA 1973 (Shuttling Trucks)</option><option value="EDA 4916">EDA 4916 (Local Trucks)</option><option value="TSA 5955">TSA 5955 (Local Trucks)</option><option value="LSA 1134">LSA 1134 (Local Trucks)</option><option value="TSA 5630">TSA 5630 (Local Trucks)</option><option value="XSA 6961">XSA 6961 (Local Trucks)</option><option value="EDA 4919">EDA 4919 (Local Trucks)</option><option value="HSA 3325">HSA 3325 (ZF Employee Vehicles)</option><option value="HSA 3326">HSA 3326 (Local Trucks)</option><option value="XSA 6962">XSA 6962 (Local Trucks)</option><option value="HAS 3324">HAS 3324 (Local Trucks)</option><option value="TSA 5821">TSA 5821 (Local Trucks)</option><option value="TSA 5820">TSA 5820 (Local Trucks)</option><option value="KGA 8879">KGA 8879 (Local Trucks)</option><option value="KBB 3497">KBB 3497 (Local Trucks)</option><option value="TSA 5694">TSA 5694 (Local Trucks)</option><option value="TSB 4800">TSB 4800 (Local Trucks)</option><option value="HSA 3238">HSA 3238 (Local Trucks)</option><option value="TSA 5693">TSA 5693 (Local Trucks)</option><option value="TSA 5700">TSA 5700 (ZF Employee Vehicles)</option><option value="TSA 5601">TSA 5601 (ZF Employee Vehicles)</option><option value="KSB 3325">KSB 3325 (ZF Employee Vehicles)</option></select>
         <select class="form-select" id="fh-maint-item" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
           <option value="">All Items</option>
         </select>
         <input type="date" id="fh-maint-from" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFleetMaintDetails()">
         <input type="date" id="fh-maint-to" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFleetMaintDetails()">
-        <input type="text" id="fh-maint-search" class="form-input" placeholder="🔍 Search plate/category..." style="padding:5px 8px;font-size:11px;width:200px" oninput="renderFleetMaintDetails()"/>
         <button class="btn btn-ghost btn-sm" onclick="exportFleetMaint()">📥 Export</button>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr>
-          <th>📅 Date</th><th>🚗 Truck Plate</th><th>Type</th><th>Category</th>
-          <th>Invoice No</th><th>💰 Cost</th><th>📍 Current KM</th>
-          <th>🔔 Alarm KM</th><th>Workshop</th><th>Notes</th><th>Description</th>
-        </tr></thead>
+          <thead><tr><th>Date</th><th>Plate</th><th>Item</th><th>Invoice No</th><th>Amount</th><th>KM</th><th>Next KM</th><th>Workshop</th><th>Notes</th></tr></thead>
           <tbody id="fleet-maint-tbody">
             <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle above</td></tr>
           </tbody>
@@ -8319,72 +8321,376 @@ function renderFleetMaintDetails(){
   const item=document.getElementById('fh-maint-item')?.value||'';
   const from=document.getElementById('fh-maint-from')?.value||'';
   const to=document.getElementById('fh-maint-to')?.value||'';
-  const search=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
   const tbody=document.getElementById('fleet-maint-tbody');
   const tfoot=document.getElementById('fleet-maint-totals');
-  if(!tbody) return;
 
-  // Empty by default
-  if(!plate && !item && !from && !to && !search){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle or filter to load records</td></tr>';
-    if(tfoot) tfoot.innerHTML='';
+  const search=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+  const fType=document.getElementById('fh-maint-type')?.value||'';
+  if(false){
+    tbody.innerHTML=''; tfoot.innerHTML='';
     return;
   }
 
-  const rows = STATE.maintenance.filter(r => {
+  const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+  if(!plate&&!item&&!from&&!to&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
+  const rows=STATE.maintenance.filter(r=>{
     const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-    const rItem =(r['Category']||r['Item']||r['item']||'').trim();
-    const rDate = r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '';
+    const rItem=(r['Category']||r['Item']||r['item']||'').trim();
+    const rType=plateType(rPlate);
     if(plate && rPlate!==plate) return false;
-    if(item  && rItem !==item)  return false;
-    if(from  && rDate < from)   return false;
-    if(to    && rDate > to)     return false;
+    if(item && rItem!==item) return false;
+    if(fType && rType!==fType) return false;
     if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
+    const dk=r['Date']||'';
+    if(from&&dk<from) return false;
+    if(to&&dk>to) return false;
     return true;
   });
 
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">No records found</td></tr>';
-    if(tfoot) tfoot.innerHTML='';
-    return;
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No records found - try clearing filters</td></tr>';
+    tfoot.innerHTML=''; return;
   }
 
-  let tCost=0;
-  tbody.innerHTML = rows.map(r => {
-    const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-    const rItem =(r['Category']||r['Item']||r['item']||'').trim();
-    const rDate = r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '—';
-    const rawCost = r['cost']||r['Amount']||r['amount']||0;
-    const rCost = typeof rawCost==='number' ? rawCost : parseAmount(String(rawCost));
-    const rKm   = parseAmount(r['Current KM']||r['KM']||r['km']||0);
-    const rNext = parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||0);
-    const rInv  = r['invoice no']||r['Invoice No']||'';
-    const rWs   = (r['Workshop']||r['workshop']||'').trim();
-    const rNotes= (r['notes']||r['Notes']||'').trim();
-    const rDesc = (r['Description']||r['description']||'').trim();
-    const rType = plateType(rPlate);
-    const rBadge= {'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'}[rType]||'bg';
-    tCost += rCost;
+  let total=0;
+  tbody.innerHTML=rows.map(r=>{
+    const amt=parseAmount(r['cost']||r['Amount']||r['amount']);
+    total+=amt;
+    const fPlate2=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const fItem2=(r['Category']||r['Item']||r['item']||'').trim();
+    const fDate2=r['Date']?new Date(r['Date']).toISOString().slice(0,10):'—';
+    const fKm2=parseAmount(r['Current KM']||r['KM']||r['km']||0);
+    const fNext2=parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||r['Next_KM']||0);
+    const fType2=plateType(fPlate2);
+    const fBadge2={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'}[fType2]||'bg';
     return `<tr>
-      <td style="color:var(--text2)">${rDate}</td>
-      <td style="font-weight:600">${rPlate||'—'}</td>
-      <td><span class="badge ${rBadge}" style="font-size:8px">${rType||'—'}</span></td>
-      <td>${rItem||'—'}</td>
-      <td style="color:var(--text3)">${rInv||'—'}</td>
-      <td style="color:var(--amber);font-weight:700">${rCost?fmt(rCost):'—'}</td>
-      <td>${rKm?rKm.toLocaleString():'—'}</td>
-      <td style="color:var(--green)">${rNext?rNext.toLocaleString():'—'}</td>
+      <td>${fDate2}</td>
+      <td style="font-weight:600">${fPlate2||'—'}</td>
+      <td><span class="badge ${fBadge2}" style="font-size:8px">${fType2}</span></td>
+      <td>${fItem2||'—'}</td>
+      <td>${r['invoice no']||r['Invoice No']||'—'}</td>
+      <td style="color:var(--amber)">${amt?fmt(amt):'—'}</td>
+      <td>${fKm2?fKm2.toLocaleString():'—'}</td>
+      <td style="color:var(--green)">${fNext2?fNext2.toLocaleString():'—'}</td>
       <td>${rWs||'—'}</td>
       <td style="color:var(--text3);font-size:10px">${rNotes||'—'}</td>
-      <td style="color:var(--text3);font-size:10px">${rDesc||'—'}</td>
     </tr>`;
   }).join('');
-
-  if(tfoot) tfoot.innerHTML = `<tr style="font-weight:700;border-top:2px solid var(--border2)">
-    <td colspan="5" style="font-size:9px;color:var(--text3)">${rows.length} records</td>
-    <td style="color:var(--amber)">${fmt(tCost)}</td>
-    <td colspan="5"></td>
+  tfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
+    <td colspan="4" style="font-size:9px;color:var(--text3)">${rows.length} invoices</td>
+    <td style="color:var(--amber)">${fmt(total)}</td>
+    <td colspan="4">—</td>
   </tr>`;
 }
 
->
+
+function filterPlateOptions(q) {
+  const sel = document.getElementById('inv-plate');
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Select vehicle...</option>';
+  STATE.fleet.forEach(v => {
+    if(!q || v.plate.toLowerCase().includes(q.toLowerCase())) {
+      const opt = document.createElement('option');
+      opt.value = v.plate;
+      opt.textContent = v.plate;
+      if(v.plate===prev) opt.selected=true;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+
+function getMaintCostByMonth(monthKey) {
+  // Returns total maintenance cost for a given month key (YYYY-MM)
+  let total = 0;
+  STATE.maintenance.forEach(r => {
+    const d = r['Date'] ? new Date(r['Date']) : null;
+    if (!d || isNaN(d)) return;
+    const mk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (mk === monthKey) total += parseAmount(r['cost']||r['Amount']||0);
+  });
+  return total;
+}
+
+function getMaintCostByDate(dateStr) {
+  // Returns total maintenance cost for a given date string (YYYY-MM-DD)
+  let total = 0;
+  STATE.maintenance.forEach(r => {
+    const d = r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '';
+    if (d === dateStr) total += parseAmount(r['cost']||r['Amount']||0);
+  });
+  return total;
+}
+
+function getMaintCostByType(monthKey, type) {
+  // Returns maintenance cost for a given month and fleet type
+  let total = 0;
+  STATE.maintenance.forEach(r => {
+    const d = r['Date'] ? new Date(r['Date']) : null;
+    if (!d || isNaN(d)) return;
+    const mk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (mk !== monthKey) return;
+    const plate = (r['Truck Plate']||r['Plate']||'').trim();
+    if (plateType(plate) !== type) return;
+    total += parseAmount(r['cost']||r['Amount']||0);
+  });
+  return total;
+}
+
+function updateVehicleKM(plate, item, currentNextKm) {
+  const newKm = prompt(`Update KM for ${plate}\nCurrent Next Service: ${currentNextKm.toLocaleString()} km\n\nEnter new current KM reading:`);
+  if (!newKm || isNaN(+newKm)) return;
+  
+  const curKm = parseFloat(newKm);
+  const remaining = currentNextKm - curKm;
+  
+  if (remaining > 0) {
+    alert(`✅ KM Updated!\n${plate} — ${item}\nCurrent: ${curKm.toLocaleString()} km\nNext Service: ${currentNextKm.toLocaleString()} km\nRemaining: ${remaining.toLocaleString()} km`);
+  } else {
+    const extend = confirm(`⚠️ ${plate} — ${item} is OVERDUE by ${Math.abs(remaining).toLocaleString()} km!\n\nDo you want to log a new service and extend the alarm?`);
+    if (extend) {
+      navigate('log-maint');
+      setTimeout(() => {
+        const sel = document.getElementById('inv-plate');
+        if(sel) sel.value = plate;
+        const itm = document.getElementById('inv-item');
+        if(itm) itm.value = item;
+        updateNextKM();
+      }, 300);
+    }
+  }
+}
+
+function refreshAll() { loadAllData(); }
+
+function renderAll() {
+  renderCurrentMonth();
+  renderFleetKPIs();
+  renderFleetHistKPIs();
+  renderAlarms();
+  renderVehicleTable();
+  renderFleetHist();
+  renderFHChart();
+  renderFHFuelLog();
+  renderRentalHist();
+  renderHistorical();
+  renderRental();
+  renderFleetGrid();
+  renderFleetChart();
+  renderFuelTable();
+  renderMaintTable();
+  renderMaintItems();
+  renderVC();
+  initLogMaintForm();
+
+  document.querySelectorAll('.loading-banner').forEach(b => {
+    b.className = 'loading-banner ok';
+    b.innerHTML = '<span>✓ Data loaded successfully · ' +
+      'Sales: ' + (Array.isArray(STATE.sales)?STATE.sales.length:(STATE.sales?.data?.length||0)) + ' · ' +
+      'Trips: ' + STATE.daily.length + ' · ' +
+      'Fuel: ' + STATE.fuel.length + ' · ' +
+      'Maint: ' + STATE.maintenance.length + '</span>';
+    setTimeout(() => b.style.display = 'none', 3000);
+  });
+  document.getElementById('footer-status').textContent = new Date().toLocaleTimeString();
+}
+
+// Init
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => navigate(item.dataset.page));
+});
+
+document.querySelectorAll('[data-fleet-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-fleet-filter]').forEach(b => b.className = 'btn btn-ghost btn-sm');
+    btn.className = 'btn btn-primary btn-sm';
+    STATE.filter.fleet = btn.dataset.fleetFilter;
+    renderFleetGrid();
+  });
+});
+
+document.querySelectorAll('.fct').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.fct').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    STATE.filter.chart = t.dataset.type;
+    renderFleetChart();
+    STATE.filter.fleet = t.dataset.type === 'all' ? 'All' : t.dataset.type;
+    renderFleetGrid();
+  });
+});
+
+document.querySelectorAll('[data-month]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-month]').forEach(x => x.className = 'btn btn-ghost btn-sm');
+    b.className = 'btn btn-primary btn-sm';
+    STATE.filter.month = b.dataset.month;
+    renderHistorical();
+  });
+});
+
+// ════ THEME TOGGLE ════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('z_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-icon-dark').style.display = isLight ? 'none' : '';
+  document.getElementById('theme-icon-light').style.display = isLight ? '' : 'none';
+  document.getElementById('theme-label').textContent = isLight ? 'Dark' : 'Light';
+}
+
+// Init theme
+if (localStorage.getItem('z_theme') === 'light') toggleTheme();
+
+// Scroll hint button
+document.addEventListener('DOMContentLoaded', () => {
+  const hint = document.createElement('div');
+  hint.className = 'scroll-hint';
+  hint.title = 'Scroll to bottom';
+  hint.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  hint.onclick = () => {
+    const content = document.querySelector('.content');
+    if (content) content.scrollTo({top: content.scrollHeight, behavior: 'smooth'});
+  };
+  document.body.appendChild(hint);
+
+  // Show/hide based on scroll position
+  const contentEl = document.querySelector('.content');
+  if (contentEl) {
+    contentEl.addEventListener('scroll', () => {
+      const atBottom = contentEl.scrollTop + contentEl.clientHeight >= contentEl.scrollHeight - 50;
+      hint.style.opacity = atBottom ? '0' : '0.7';
+    });
+  }
+});
+
+
+
+// ════ THEME TOGGLE ════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('z_theme', isLight ? 'light' : 'dark');
+  const di = document.getElementById('theme-icon-dark');
+  const li = document.getElementById('theme-icon-light');
+  const lb = document.getElementById('theme-label');
+  if(di) di.style.display = isLight ? 'none' : '';
+  if(li) li.style.display = isLight ? '' : 'none';
+  if(lb) lb.textContent = isLight ? 'Dark' : 'Light';
+}
+if (localStorage.getItem('z_theme') === 'light') {
+  document.addEventListener('DOMContentLoaded', toggleTheme);
+}
+
+// ════ NAVIGATION ════
+function navigate(page) {
+  const key = page.replace('page-','');
+  const pageId = key.startsWith('page-') ? key : 'page-' + key;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById(pageId);
+  if (pageEl) pageEl.classList.add('active');
+  const navEl = document.querySelector(`[data-page="${key}"]`);
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    'current':        ['Overview — Current',    'Live fleet & sales data'],
+    'historical':     ['Overview — Historical', 'Cumulative data across all months'],
+    'rental':         ['Rental — Current',      'Rental fleet cost this month'],
+    'rental-hist':    ['Rental — Historical',   'Rental historical analysis'],
+    'myfleet':        ['Fleet — Current',       'Vehicle performance this month'],
+    'fleet-hist':     ['Fleet — Historical',    'Fleet performance across months'],
+    'log-maint':      ['Log Maintenance',       'Record maintenance invoice'],
+    'maint-alarms':   ['Maintenance Alarms',    'Active maintenance alerts'],
+    'vendor-clients': ['Vendor Clients',        'Customer shipping data'],
+  };
+  const title = titles[key] || [key, ''];
+  const titleEl = document.getElementById('page-title');
+  const subtitleEl = document.getElementById('page-subtitle');
+  if (titleEl) titleEl.textContent = title[0];
+  if (subtitleEl) subtitleEl.textContent = title[1];
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb && !sb.classList.contains('collapsed')) {
+    sb.classList.add('collapsed');
+    if (ov) ov.classList.remove('visible');
+  }
+  // Re-render page-specific content after navigation
+  if (key === 'maint-alarms') { setTimeout(renderAlarms, 100); setTimeout(renderAlarms, 500); }
+  if (key === 'log-maint') setTimeout(initLogMaintForm, 50);
+}
+
+// ════ SIDEBAR TOGGLE ════
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (!sb) return;
+  const collapsed = sb.classList.toggle('collapsed');
+  if(ov) ov.classList.toggle('visible', !collapsed);
+}
+
+// Auto-close sidebar when nav item clicked
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebar-overlay');
+      if(sb && !sb.classList.contains('collapsed')) {
+        sb.classList.add('collapsed');
+        if(ov) ov.classList.remove('visible');
+      }
+    });
+  });
+});
+
+// Download for Netlify
+function downloadForNetlify(){
+  const pw=prompt('🔒 Enter download password:');
+  if(!pw) return;
+  if(pw!=='ZFI2026'){alert('❌ Incorrect password');return;}
+  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='index.html';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// Boot
+(async function() {
+  console.log('🚀 Zamil FMS — Loading data...');
+  await loadAllData();
+  renderAll();
+})();
+</script>
+<div class="scroll-hint" id="scroll-hint" onclick="document.querySelector('.content').scrollTo({top:99999,behavior:'smooth'})" title="Scroll to bottom" style="opacity: 0.95; pointer-events: auto;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</div>
+<script>
+// Scroll buttons
+(function(){
+  const content = document.querySelector('.content');
+  if(!content) return;
+  // Up button
+  let upBtn = document.getElementById('scroll-up');
+  if(!upBtn) {
+    upBtn = document.createElement('div');
+    upBtn.id = 'scroll-up';
+    upBtn.className = 'scroll-up';
+    upBtn.title = 'Scroll to top';
+    upBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+    upBtn.onclick = () => content.scrollTo({top:0,behavior:'smooth'});
+    document.body.appendChild(upBtn);
+  }
+  const hint = document.getElementById('scroll-hint');
+  content.addEventListener('scroll', () => {
+    const atBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 80;
+    const atTop = content.scrollTop < 50;
+    if(hint) {
+      hint.style.opacity = atBottom ? '0' : '0.95';
+      hint.style.pointerEvents = atBottom ? 'none' : 'auto';
+    }
+    upBtn.style.opacity = atTop ? '0' : '0.95';
+    upBtn.style.pointerEvents = atTop ? 'none' : 'auto';
+  });
+  upBtn.style.opacity = '0';
+})();
+</script><div id="scroll-up" class="scroll-up" title="Scroll to top" style="opacity: 0.95; pointer-events: auto;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+
+<div class="scroll-hint" title="Scroll to bottom" style="opacity: 0.7;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div></body></html>
