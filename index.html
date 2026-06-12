@@ -6646,7 +6646,7 @@ function renderFleetChart() {
     if(vType==='ZF Employee Vehicles') return;
     if(chartFilter!=='all' && vType!==chartFilter) return;
     const wk='W'+Math.ceil(date.getUTCDate()/7);
-    wMaint[wk]=(wMaint[wk]||0)+parseAmount(r['Amount']||r['amount']);
+    wMaint[wk]=(wMaint[wk]||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
   });
   const weeks=Object.keys(wFuel).sort();
   const maxVal=Math.max(1,...weeks.map(wk=>Math.max(wFuel[wk]||0,wMaint[wk]||0)));
