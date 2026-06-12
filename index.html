@@ -7840,6 +7840,7 @@ async function saveMaintenanceRecord() {
     'Current KM':     lastKm || 0,
     'Change after':   interval || '',
     recorded_by:      'Fleet Dashboard',
+    origin:           location.hostname,
   };
 
   try {
