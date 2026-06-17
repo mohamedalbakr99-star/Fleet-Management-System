@@ -5989,8 +5989,9 @@ function renderRental() {
     const vals = Object.values(r);
     if (vals[0] && vals[0].length < 30) origins.add(vals[0]);
     if (vals[1] && vals[1].length < 30) dests.add(vals[1]);
-    ['Mubarrad','Afaq Al Nama','Ajex','Nawaqel Al khalij','NTC'].forEach(c => {
-      if (r[c]) companies.add(c);
+    // Dynamically detect company columns (skip Origin and Destination)
+    Object.keys(r).forEach(c => {
+      if (c && c !== 'Origin' && c !== 'Destination' && c !== ' ' && r[c]) companies.add(c);
     });
   });
 
@@ -6219,7 +6220,15 @@ function renderPriceTable() {
 
   const filterComp = document.getElementById('price-filter-company')?.value;
   const filterDest = document.getElementById('price-filter-dest')?.value;
-  const COMP_COLS = ['Mubarrad','Afaq Al Nama','Ajex','Nawaqel Al khalij','NTC'];
+  const COMP_COLS = (() => {
+    const cols = new Set();
+    STATE.prices.forEach(r => {
+      Object.keys(r).forEach(c => {
+        if (c && c !== 'Origin' && c !== 'Destination' && c.trim()) cols.add(c);
+      });
+    });
+    return [...cols];
+  })();
 
   // Populate dest filter
   const destEl = document.getElementById('price-filter-dest');
@@ -6277,7 +6286,15 @@ function renderPriceComparison() {
     return;
   }
 
-  const COMP_COLS = ['Mubarrad','Afaq Al Nama','Ajex','Nawaqel Al khalij','NTC'];
+  const COMP_COLS = (() => {
+    const cols = new Set();
+    STATE.prices.forEach(r => {
+      Object.keys(r).forEach(c => {
+        if (c && c !== 'Origin' && c !== 'Destination' && c.trim()) cols.add(c);
+      });
+    });
+    return [...cols];
+  })();
 
   if (company && !origin && !dest) {
     // Show all routes for this company sorted by price
