@@ -6685,28 +6685,22 @@ function renderFleetChart() {
     const date=parseDate(r['التاريخ']||r['Date']);
     if(!date||!isCurrentMonth(date)) return;
     const vType=plateType(r['المركبة']||r['Plate']||'');
-    // Always exclude ZF Employee Vehicles
-    if(vType==='ZF Employee Vehicles') return;
-    // Apply type filter
-    if(chartFilter!=='all' && vType!==chartFilter) return;
+    if(chartFilter!=='all') {
+      const filters = chartFilter.split(',');
+      if(!filters.includes(vType)) return;
+    }
     const wk='W'+Math.ceil(date.getUTCDate()/7);
     wFuel[wk]=(wFuel[wk]||0)+parseAmount(r['التكلفة']||r['Cost']);
   });
-  console.log('Chart filter:', chartFilter, 'maint records:', STATE.maintenance.length);
   STATE.maintenance.forEach(r=>{
     const date=parseDate(r['Date']||r['date']);
-    console.log('Chart maint:', r['Date'], 'parsed:', date, 'isCM:', isCurrentMonth(date));
     if(!date||!isCurrentMonth(date)) return;
     const vType=plateType((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
-    console.log('  vType:', vType, 'plate:', r['Truck Plate']);
     if(vType==='ZF Employee Vehicles') return;
     if(chartFilter!=='all' && vType!==chartFilter) return;
     const wk='W'+Math.ceil(date.getUTCDate()/7);
-    const cost=parseAmount(r['cost']||r['Amount']||r['amount']||0);
-    console.log('  Adding to', wk, 'cost:', cost);
-    wMaint[wk]=(wMaint[wk]||0)+cost;
+    wMaint[wk]=(wMaint[wk]||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
   });
-  console.log('wMaint final:', wMaint);
   const weeks=Object.keys(wFuel).sort();
   const maxVal=Math.max(1,...weeks.map(wk=>Math.max(wFuel[wk]||0,wMaint[wk]||0)));
   const W=800,H=280,pL=60,pR=20,pT=20,pB=40;
