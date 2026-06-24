@@ -4131,7 +4131,25 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       </div>
 
       <!-- Monthly Fleet Chart -->
-      <div class="chart-card" style="margin-bottom:14px">
+      
+      <!-- Vehicle Cards Section -->
+      <div style="margin-bottom:14px">
+        <div class="sec-title" style="margin-bottom:8px">🚗 Vehicle Summary</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <select class="form-select" id="fh-veh-type" onchange="renderFHVehicleCards()" style="padding:5px 8px;font-size:11px">
+            <option value="">All Types</option>
+            <option value="Shuttling Trucks">Shuttling Trucks</option>
+            <option value="Local Trucks">Local Trucks</option>
+            <option value="ZF Employee Vehicles">ZF Employee Vehicles</option>
+          </select>
+          <select class="form-select" id="fh-veh-month" onchange="renderFHVehicleCards()" style="padding:5px 8px;font-size:11px">
+            <option value="">All Months</option>
+          </select>
+        </div>
+        <div id="fh-vehicle-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
+      </div>
+
+<div class="chart-card" style="margin-bottom:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div>
             <div class="chart-title" style="margin-bottom:1px">Monthly Cost per Vehicle</div>
@@ -8518,8 +8536,10 @@ function renderFleetMaintDetails(){
     if(item && rItem!==item) return false;
     if(fType && rType!==fType) return false;
     if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
-    const dk=r['Date']||'';
-    if(month) { const rMk = dk.slice(0,7); if(rMk!==month) return false; }
+    const dkRaw=r['Date']||'';
+    const dkDate = dkRaw ? new Date(dkRaw) : null;
+    const rMk = dkDate && !isNaN(dkDate) ? dkDate.getFullYear()+'-'+String(dkDate.getMonth()+1).padStart(2,'0') : '';
+    if(month && rMk!==month) return false;
     return true;
   });
 
@@ -8645,10 +8665,106 @@ function updateVehicleKM(plate, item, currentNextKm) {
 
 function refreshAll() { loadAllData(); }
 
+
+function renderFHVehicleCards() {
+  const container = document.getElementById('fh-vehicle-cards');
+  const fType = document.getElementById('fh-veh-type')?.value || '';
+  const fMonth = document.getElementById('fh-veh-month')?.value || '';
+  if (!container) return;
+
+  // Populate month selector
+  const monSel = document.getElementById('fh-veh-month');
+  if (monSel && monSel.children.length <= 1) {
+    const months = new Set();
+    STATE.fuel.forEach(r => {
+      const d = parseDate(r['التاريخ']||r['Date']||'');
+      if (d && !isNaN(d)) months.add(getMonthKey(d));
+    });
+    [...months].sort().reverse().forEach(mk => {
+      const d = new Date(mk+'-01');
+      monSel.innerHTML += `<option value="${mk}">${d.toLocaleDateString('en-US',{month:'short',year:'numeric'})}</option>`;
+    });
+  }
+
+  const vehicleStats = {};
+  STATE.fleet.forEach(v => {
+    const vType = plateType(v.plate);
+    if (fType && vType !== fType) return;
+    vehicleStats[v.plate] = { plate: v.plate, type: vType, fuel: 0, liters: 0, maint: 0, lastKm: 0, firstKm: 0, kmDriven: 0 };
+  });
+
+  // Fuel stats
+  STATE.fuel.forEach(r => {
+    const d = parseDate(r['التاريخ']||r['Date']||'');
+    if (!d || isNaN(d)) return;
+    const mk = getMonthKey(d);
+    if (fMonth && mk !== fMonth) return;
+    const v = STATE.fleet.find(v2 => {
+      const rNorm = (r['المركبة']||r['Plate']||'').trim();
+      if (v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim() === rNorm.replace(/\s+/g,' ');
+      return extractDigits(v2.plate) === extractDigits(rNorm);
+    });
+    if (!v || !vehicleStats[v.plate]) return;
+    const cost = parseAmount(r['التكلفة']||r['Cost']||0);
+    const liters = parseAmount(r['الكمية']||r['Liters']||0);
+    const km = parseAmount(r['عداد الكيلومتر']||r['KM']||0);
+    vehicleStats[v.plate].fuel += cost;
+    vehicleStats[v.plate].liters += liters;
+    if (km > vehicleStats[v.plate].lastKm) vehicleStats[v.plate].lastKm = km;
+    if (!vehicleStats[v.plate].firstKm || km < vehicleStats[v.plate].firstKm) vehicleStats[v.plate].firstKm = km;
+  });
+
+  // Maintenance stats
+  STATE.maintenance.forEach(r => {
+    const d = parseDate(r['Date']||'');
+    if (!d || isNaN(d)) return;
+    const mk = getMonthKey(d);
+    if (fMonth && mk !== fMonth) return;
+    const plate = (r['Truck Plate']||r['Plate']||'').trim();
+    if (!vehicleStats[plate]) return;
+    vehicleStats[plate].maint += parseAmount(r['cost']||r['Amount']||0);
+  });
+
+  // Calculate KM driven
+  Object.values(vehicleStats).forEach(v => {
+    const base = getBaselineKM(v.plate, v.lastKm);
+    v.kmDriven = v.lastKm > 0 ? (base && v.lastKm > base ? v.lastKm - base : (v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0)) : 0;
+  });
+
+  const cards = Object.values(vehicleStats).filter(v => v.fuel > 0 || v.maint > 0 || v.lastKm > 0);
+  
+  if (!cards.length) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:20px;text-align:center">No data — select type or month</div>';
+    return;
+  }
+
+  const badgeMap = {'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
+  container.innerHTML = cards.map(v => {
+    const costPerKm = v.kmDriven > 0 ? (v.fuel + v.maint) / v.kmDriven : 0;
+    const lPer100 = v.kmDriven > 0 ? (v.liters / v.kmDriven) * 100 : 0;
+    return `<div class="kpi-card" style="padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700;font-size:13px">${v.plate}</div>
+        <span class="badge ${badgeMap[v.type]||'bg'}" style="font-size:8px">${v.type}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px">
+        <div><div style="color:var(--text3);font-size:8px">📍 Current KM</div><div style="font-weight:700;color:var(--text)">${v.lastKm?v.lastKm.toLocaleString():'—'}</div></div>
+        <div><div style="color:var(--text3);font-size:8px">🛣️ KM Driven</div><div style="font-weight:700;color:var(--text)">${v.kmDriven?v.kmDriven.toLocaleString():'—'}</div></div>
+        <div><div style="color:var(--text3);font-size:8px">⛽ Fuel Cost</div><div style="font-weight:700;color:var(--amber)">${v.fuel?fmt(v.fuel):'—'}</div></div>
+        <div><div style="color:var(--text3);font-size:8px">🔧 Maint Cost</div><div style="font-weight:700;color:var(--red)">${v.maint?fmt(v.maint):'—'}</div></div>
+        <div><div style="color:var(--text3);font-size:8px">🪣 Liters</div><div style="font-weight:700;color:var(--text2)">${v.liters?v.liters.toLocaleString():'—'}</div></div>
+        <div><div style="color:var(--text3);font-size:8px">📊 L/100KM</div><div style="font-weight:700;color:var(--green)">${lPer100?lPer100.toFixed(2):'—'}</div></div>
+        <div style="grid-column:1/-1"><div style="color:var(--text3);font-size:8px">⚡ Cost/KM</div><div style="font-weight:700;color:var(--blue)">${costPerKm?'SAR '+costPerKm.toFixed(2):'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderAll() {
   renderCurrentMonth();
   renderFleetKPIs();
   renderFleetHistKPIs();
+  renderFHVehicleCards();
   renderAlarms();
   renderVehicleTable();
   renderFleetHist();
