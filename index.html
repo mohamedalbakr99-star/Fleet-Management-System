@@ -3473,7 +3473,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <div class="filter-row">
         <input type="text" id="maint-search" class="form-input" placeholder="🔍 Search..." style="padding:5px 8px;font-size:11px;width:150px" oninput="renderMaintTable()"/>
         <label>Vehicle:</label>
-        <select id="maint-filter-veh" onchange="renderMaintTable()"><option value="">— Select Vehicle —</option><option>RRB 3498</option><option>VRB 4654</option><option>TSB 2096</option><option>GZA 1973</option><option>EDA 4916</option><option>TSA 5955</option><option>LSA 1134</option><option>TSA 5630</option><option>XSA 6961</option><option>EDA 4919</option><option>HSA 3325</option><option>HSA 3326</option><option>XSA 6962</option><option>HAS 3324</option><option>TSA 5821</option><option>TSA 5820</option><option>KGA 8879</option><option>KBB 3497</option><option>TSA 5694</option><option>TSB 4800</option><option>HSA 3238</option><option>TSA 5693</option><option>TSA 5700</option><option>TSA 5601</option><option>KSB 3325</option></select>
+        <select id="maint-filter-veh" onchange="renderMaintTable()"><option value="">— Select Vehicle —</option><option value="RRB 3498">RRB 3498</option><option value="VRB 4654">VRB 4654</option><option value="TSB 2096">TSB 2096</option><option value="GZA 1973">GZA 1973</option><option value="EDA 4916">EDA 4916</option><option value="TSA 5955">TSA 5955</option><option value="LSA 1134">LSA 1134</option><option value="TSA 5630">TSA 5630</option><option value="XSA 6961">XSA 6961</option><option value="EDA 4919">EDA 4919</option><option value="HSA 3325">HSA 3325</option><option value="HSA 3326">HSA 3326</option><option value="XSA 6962">XSA 6962</option><option value="HAS 3324">HAS 3324</option><option value="TSA 5821">TSA 5821</option><option value="TSA 5820">TSA 5820</option><option value="KGA 8879">KGA 8879</option><option value="KBB 3497">KBB 3497</option><option value="TSA 5694">TSA 5694</option><option value="TSB 4800">TSB 4800</option><option value="HSA 3238">HSA 3238</option><option value="TSA 5693">TSA 5693</option><option value="TSA 5700">TSA 5700</option><option value="TSA 5601">TSA 5601</option><option value="KSB 3325">KSB 3325</option></select>
         <label>Item:</label>
         <select id="maint-filter-item" onchange="renderMaintTable()"><option value="">— Select Category —</option><option>Periodic Service</option><option>Engine</option><option>Cooling System</option><option>Tires</option><option>Body &amp; Paint</option><option>Accessories</option><option>Suspension</option><option>Exhaust</option><option>Car Wash</option><option>Electrical</option><option>Brakes</option><option>AC</option><option>Other</option></select>
       </div>
@@ -4136,6 +4136,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <div style="margin-bottom:14px">
         <div class="sec-title" style="margin-bottom:8px">🚗 Vehicle Summary</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <input type="text" id="fh-veh-search" class="form-input" placeholder="🔍 Search plate..." style="padding:5px 8px;font-size:11px;width:160px" oninput="renderFHVehicleCards()"/>
           <select class="form-select" id="fh-veh-type" onchange="renderFHVehicleCards()" style="padding:5px 8px;font-size:11px">
             <option value="">All Types</option>
             <option value="Shuttling Trucks">Shuttling Trucks</option>
@@ -8294,12 +8295,12 @@ function renderMaintTable() {
   // Populate filters
   const selV = document.getElementById('maint-filter-veh');
   if (selV && selV.children.length <= 1) {
-    selV.innerHTML = '<option value="">— Select Vehicle —</option>' + STATE.fleet.map(v => `<option>${v.plate}</option>`).join('');
+    selV.innerHTML = '<option value="">— Select Vehicle —</option>' + STATE.fleet.map(v => `<option value="${v.plate}">${v.plate}</option>`).join('');
   }
   const selI = document.getElementById('maint-filter-item');
   if (selI && selI.children.length <= 1) {
     const items = ['Periodic Service','Engine','Cooling System','Tires','Body & Paint','Accessories','Suspension','Exhaust','Car Wash','Electrical','Brakes','AC','Other'];
-    selI.innerHTML = '<option value="">— Select Category —</option>' + items.map(i => `<option>${i}</option>`).join('');
+    selI.innerHTML = '<option value="">— Select Category —</option>' + items.map(i => `<option value="${i}">${i}</option>`).join('');
   }
 
   if (!STATE.maintenance || !STATE.maintenance.length) {
@@ -8670,6 +8671,7 @@ function renderFHVehicleCards() {
   const container = document.getElementById('fh-vehicle-cards');
   const fType = document.getElementById('fh-veh-type')?.value || '';
   const fMonth = document.getElementById('fh-veh-month')?.value || '';
+  const fVehSearch = (document.getElementById('fh-veh-search')?.value || '').toLowerCase();
   if (!container) return;
 
   // Populate month selector
@@ -8690,6 +8692,7 @@ function renderFHVehicleCards() {
   STATE.fleet.forEach(v => {
     const vType = plateType(v.plate);
     if (fType && vType !== fType) return;
+    if (fVehSearch && !v.plate.toLowerCase().includes(fVehSearch)) return;
     vehicleStats[v.plate] = { plate: v.plate, type: vType, fuel: 0, liters: 0, maint: 0, lastKm: 0, firstKm: 0, kmDriven: 0 };
   });
 
