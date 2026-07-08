@@ -4318,6 +4318,14 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 
       <!-- Destination Analysis -->
       <div class="sec-title">Destination Analysis — Historical</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+        <select class="form-select" id="rh-dest-month" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Months</option>
+        </select>
+        <select class="form-select" id="rh-dest-filter" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Destinations</option>
+        </select>
+      </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
         <table>
           <thead><tr>
@@ -4355,6 +4363,19 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 
       <!-- All Trips -->
       <div class="sec-title">All Trips Log</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+        <select class="form-select" id="rh-trips-month" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Months</option>
+        </select>
+        <select class="form-select" id="rh-trips-company" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Companies</option>
+        </select>
+        <select class="form-select" id="rh-trips-dest" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Destinations</option>
+        </select>
+        <input type="date" id="rh-trips-from" class="form-input" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+        <input type="date" id="rh-trips-to" class="form-input" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+      </div>
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>Date</th><th>Company</th><th>Origin</th><th>Destination</th><th>Trucks</th><th>Unit Price</th><th>Total Cost</th><th>Note</th></tr></thead>
@@ -6433,11 +6454,13 @@ function renderCompanyAnalysis() {
   const stats={};
   let totalCost=0, totalTrips=0;
   STATE.daily.forEach(r=>{
+    const caDate=parseDate(r['Date']||r['date']);
+    if(!caDate||!isCurrentMonth(caDate)) return;
     const comp=(r['Company']||'').trim();
     const orig=(r['Origin']||'').trim();
     const dest=(r['Destination']||'').trim();
     const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
-    const trucks=parseAmount(r['Trucks']||1);
+    const trucks=parseAmount(r['Trucks']||r['trucks']||0);
     if(!dest||cost===0) return;
     if(fComp && comp!==fComp) return;
     if(fOrig && orig!==fOrig) return;
@@ -7947,7 +7970,37 @@ function renderRentalHist(){
     const comp=(r['Company']||'').trim(); if(comp) companies.add(comp);
     const dest=(r['Destination']||'').trim(); if(dest) dests.add(dest);
   });
+  // Also add months from sales data
+  const allSales=[...(Array.isArray(STATE.sales)?STATE.sales:(STATE.sales?.data||[])),
+                  ...(Array.isArray(STATE.salesHist)?STATE.salesHist:(STATE.salesHist?.data||[]))];
+  allSales.forEach(r=>{
+    const date=parseDate(r['Date ']||r['Date']||r['date']);
+    if(date&&!isNaN(date)) months.add(getMonthKey(date));
+  });
 
+  // Populate all month/company/dest selects
+  ['rh-month','rh-dest-month','rh-trips-month'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.children.length<=1){
+      [...months].sort().reverse().forEach(mk=>{
+        const d=new Date(mk+'-15T12:00:00Z');
+        const lbl=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+        el.innerHTML+=`<option value="${mk}">${lbl}</option>`;
+      });
+    }
+  });
+  ['rh-company','rh-trips-company'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.children.length<=1){
+      [...companies].sort().forEach(co=>{ el.innerHTML+=`<option value="${co}">${co}</option>`; });
+    }
+  });
+  ['rh-dest','rh-dest-filter','rh-trips-dest'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.children.length<=1){
+      [...dests].sort().forEach(d=>{ el.innerHTML+=`<option value="${d}">${d}</option>`; });
+    }
+  });
   const rhMonth=document.getElementById('rh-month');
   if(rhMonth&&rhMonth.children.length<=1){
     [...months].sort().forEach(mk=>{
@@ -8062,30 +8115,131 @@ function renderRentalHist(){
     <td>${fmt(overall)}</td><td>—</td><td>—</td>
   </tr>`;
 
-  // Dest table
-  let destEntries=Object.entries(destStats);
+  // Dest table - with month and dest filters
+  const rdMonth=document.getElementById('rh-dest-month')?.value||'';
+  const rdDest=document.getElementById('rh-dest-filter')?.value||'';
+  
+  // Populate dest filter select
+  const rdDestSel=document.getElementById('rh-dest-filter');
+  if(rdDestSel&&rdDestSel.children.length<=1){
+    [...dests].sort().forEach(d=>{ rdDestSel.innerHTML+=`<option value="${d}">${d}</option>`; });
+  }
+  const rdMonthSel=document.getElementById('rh-dest-month');
+  if(rdMonthSel&&rdMonthSel.children.length<=1){
+    [...months].sort().reverse().forEach(mk=>{
+      const d=new Date(mk+'-15T12:00:00Z');
+      rdMonthSel.innerHTML+=`<option value="${mk}">${d.toLocaleDateString('en-US',{month:'short',year:'numeric'})}</option>`;
+    });
+  }
+  
+  // Build filtered dest stats
+  const filteredDestStats={};
+  let filteredDestTotal=0, filteredTripTotal=0;
+  STATE.daily.forEach(r=>{
+    const d=parseDate(r['Date']||r['date']);
+    if(!d||isNaN(d)) return;
+    const mk=getMonthKey(d);
+    if(rdMonth && mk!==rdMonth) return;
+    const dest=(r['Destination']||'').trim();
+    if(rdDest && dest!==rdDest) return;
+    const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
+    const trucks=parseAmount(r['Trucks']||r['trucks']||0);
+    if(!dest||cost===0) return;
+    if(!filteredDestStats[dest]) filteredDestStats[dest]={trips:0,cost:0};
+    filteredDestStats[dest].trips+=trucks; filteredDestStats[dest].cost+=cost;
+    filteredDestTotal+=cost; filteredTripTotal+=trucks;
+  });
+
+  let destEntries=Object.entries(filteredDestStats);
   const destSort={dest:([a],[b])=>_rhDestSortAsc?a.localeCompare(b):b.localeCompare(a),trips:([,a],[,b])=>_rhDestSortAsc?a.trips-b.trips:b.trips-a.trips,cost:([,a],[,b])=>_rhDestSortAsc?a.cost-b.cost:b.cost-a.cost};
   destEntries.sort(destSort[_rhDestSort]||destSort.trips);
   const destTbody=document.getElementById('rh-dest-tbody');
-  destTbody.innerHTML=destEntries.map(([dest,v],i)=>`<tr>
-    <td style="color:var(--text3)">${i+1}</td>
-    <td style="font-weight:600">${dest}</td>
-    <td>${v.trips}</td>
-    <td><span class="badge bg">${totalTrips?(v.trips/totalTrips*100).toFixed(1):0}%</span></td>
-    <td style="color:var(--amber)">${fmt(v.cost)}</td>
-    <td>${fmt(v.trips?v.cost/v.trips:0)}</td>
-  </tr>`).join('');
+  if(!destEntries.length){
+    destTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">No data</td></tr>';
+  } else {
+    destTbody.innerHTML=destEntries.map(([dest,v],i)=>`<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="font-weight:600">${dest}</td>
+      <td>${v.trips}</td>
+      <td><span class="badge bg">${filteredTripTotal?(v.trips/filteredTripTotal*100).toFixed(1):0}%</span></td>
+      <td style="color:var(--amber)">${fmt(v.cost)}</td>
+      <td>${fmt(v.trips?v.cost/v.trips:0)}</td>
+    </tr>`).join('');
+    const destTfoot=document.getElementById('rh-dest-totals');
+    if(destTfoot) destTfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
+      <td colspan="2" style="font-size:9px;color:var(--text3)">TOTAL (${destEntries.length})</td>
+      <td>${filteredTripTotal}</td><td></td>
+      <td style="color:var(--amber)">${fmt(filteredDestTotal)}</td>
+      <td>${fmt(filteredTripTotal?filteredDestTotal/filteredTripTotal:0)}</td>
+    </tr>`;
+  }
 
-  // Trips log - show only if filter selected
+  // Trips log - use dedicated filter IDs
+  const tMonth=document.getElementById('rh-trips-month')?.value||'';
+  const tComp=document.getElementById('rh-trips-company')?.value||'';
+  const tDest=document.getElementById('rh-trips-dest')?.value||'';
+  const tFrom=document.getElementById('rh-trips-from')?.value||'';
+  const tTo=document.getElementById('rh-trips-to')?.value||'';
   const tripsTbody=document.getElementById('rh-trips-tbody');
   const tripsTfoot=document.getElementById('rh-trips-totals');
-  if(!fMonth&&!fComp&&!fDest){
-    tripsTbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">🔍 Select month, company, or destination to load trips</td></tr>';
-    tripsTfoot.innerHTML=''; return;
+  if(!tMonth&&!tComp&&!tDest&&!tFrom&&!tTo){
+    tripsTbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">🔍 Select month, company, destination, or date range to load trips</td></tr>';
+    if(tripsTfoot) tripsTfoot.innerHTML=''; 
+  } else {
+    const tripsFiltered = STATE.daily.filter(r=>{
+      const d=parseDate(r['Date']||r['date']);
+      if(!d||isNaN(d)) return false;
+      const mk=getMonthKey(d);
+      const dk=d.toISOString().slice(0,10);
+      const comp=(r['Company']||'').trim();
+      const dest=(r['Destination']||'').trim();
+      const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
+      if(cost===0) return false;
+      if(tMonth && mk!==tMonth) return false;
+      if(tComp && comp!==tComp) return false;
+      if(tDest && dest!==tDest) return false;
+      if(tFrom && dk<tFrom) return false;
+      if(tTo && dk>tTo) return false;
+      return true;
+    });
+    if(!tripsFiltered.length){
+      tripsTbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';
+      if(tripsTfoot) tripsTfoot.innerHTML='';
+    } else {
+      let tTotalCost=0, tTotalTrips=0;
+      tripsTbody.innerHTML=tripsFiltered.map(r=>{
+        const d=parseDate(r['Date']||r['date']);
+        const dk=d?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+        const comp=(r['Company']||'').trim();
+        const orig=(r['Origin']||'').trim();
+        const dest=(r['Destination']||'').trim();
+        const trucks=parseAmount(r['Trucks']||r['trucks']||0);
+        const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
+        const unit=trucks?cost/trucks:0;
+        const note=(r['Note']||r['Notes']||r['notes']||'').trim();
+        tTotalCost+=cost; tTotalTrips+=trucks;
+        return `<tr>
+          <td>${dk}</td>
+          <td style="font-weight:600">${comp||'—'}</td>
+          <td>${orig||'—'}</td>
+          <td>${dest||'—'}</td>
+          <td style="text-align:center">${trucks||'—'}</td>
+          <td>${unit?fmt(unit):'—'}</td>
+          <td style="color:var(--amber);font-weight:600">${cost?fmt(cost):'—'}</td>
+          <td style="color:var(--text3);font-size:10px">${note||'—'}</td>
+        </tr>`;
+      }).join('');
+      if(tripsTfoot) tripsTfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
+        <td colspan="4" style="font-size:9px;color:var(--text3)">${tripsFiltered.length} trips</td>
+        <td style="text-align:center">${tTotalTrips}</td>
+        <td></td>
+        <td style="color:var(--amber)">${fmt(tTotalCost)}</td>
+        <td></td>
+      </tr>`;
+    }
   }
-  if(!trips.length){
-    tripsTbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:16px">No trips found</td></tr>';
-    tripsTfoot.innerHTML=''; return;
+
+  if(false){
   }
   let tC=0,tT=0;
   tripsTbody.innerHTML=[...trips].sort((a,b)=>{
