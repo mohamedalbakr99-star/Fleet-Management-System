@@ -7973,13 +7973,15 @@ function renderRentalHist(){
   // Month selector only shows months with actual rental trip data
 
   // Populate all month/company/dest selects
-  ['rh-month','rh-dest-month','rh-trips-month'].forEach(id=>{
+  ['rh-dest-month','rh-trips-month'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el&&el.children.length<=1){
+    if(el){
+      const prev=el.value;
+      el.innerHTML='<option value="">All Months</option>';
       [...months].sort().reverse().forEach(mk=>{
         const d=new Date(mk+'-15T12:00:00Z');
         const lbl=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
-        el.innerHTML+=`<option value="${mk}">${lbl}</option>`;
+        el.innerHTML+=`<option value="${mk}"${mk===prev?' selected':''}>${lbl}</option>`;
       });
     }
   });
@@ -7996,10 +7998,12 @@ function renderRentalHist(){
     }
   });
   const rhMonth=document.getElementById('rh-month');
-  if(rhMonth&&rhMonth.children.length<=1){
-    [...months].sort().forEach(mk=>{
+  if(rhMonth){
+    const prevVal=rhMonth.value;
+    rhMonth.innerHTML='<option value="">All Months</option>';
+    [...months].sort().reverse().forEach(mk=>{
       const d=new Date(mk+'-15T12:00:00Z');
-      rhMonth.innerHTML+=`<option value="${mk}">${getMonthName(d)} ${d.getFullYear()}</option>`;
+      rhMonth.innerHTML+=`<option value="${mk}"${mk===prevVal?' selected':''}>${getMonthName(d)} ${d.getFullYear()}</option>`;
     });
   }
   const rhComp=document.getElementById('rh-company');
