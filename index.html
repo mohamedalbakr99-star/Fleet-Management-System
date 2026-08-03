@@ -7515,6 +7515,8 @@ function setFleetKpiTab(tab) {
 }
 function renderFleetKPIs() {
   let totKm=0,totFuel=0,totMaint=0,totLiters=0,totInv=0;
+  console.log('renderFleetKPIs - fuel records:', STATE.fuel.length);
+  if(STATE.fuel[0]) console.log('First fuel date:', STATE.fuel[0]['التاريخ']||STATE.fuel[0]['Date']);
   STATE.fleet.forEach(v=>{
     const type=plateType(v.plate);
     if(_fleetKpiTab!=='all'&&type!==_fleetKpiTab) return;
@@ -7545,6 +7547,7 @@ function renderFleetKPIs() {
   s('fkpi-km',       totKm>0?totKm.toLocaleString():'—');
   s('fkpi-km-sub',   'km this month');
   s('fkpi-km-avg',   totKm>0?Math.round(totKm/n).toLocaleString()+' km':'—');
+  console.log('KPI totFuel:', totFuel, 'n:', STATE.fleet.length);
   s('fkpi-fuel',     fmtShort(totFuel));
   s('fkpi-fuel-sub', totLiters>0?Math.round(totLiters).toLocaleString()+' liters':'—');
   s('fkpi-fuel-avg', totFuel>0?fmtShort(totFuel/n):'—');
