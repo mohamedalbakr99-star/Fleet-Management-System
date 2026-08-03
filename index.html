@@ -4821,6 +4821,8 @@ function parseDate(s) {
   if (!s) return null;
   if (typeof s !== 'string') return new Date(s);
   s = s.trim();
+  // Remove surrounding quotes
+  s = s.replace(/^"|"$/g, '');
   // Format: "1-Jun-26"
   const m1 = s.match(/^(\d{1,2})-(\w{3})-(\d{2,4})$/);
   if (m1) {
