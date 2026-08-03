@@ -1620,13 +1620,20 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <!-- Interactive Chart -->
       <div class="fleet-chart-wrap">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Vehicle Cost Comparison — Monthly</div>
+          <div style="font-size:11px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Cost Comparison For Vehicles</div>
           <div class="fleet-filter-tabs">
             <div class="fct active" data-type="all">All</div>
             <div class="fct" data-type="Shuttling Trucks">Shuttling Trucks</div>
             <div class="fct" data-type="Local Trucks">Local Trucks</div>
             <div class="fct" data-type="ZF Employee Vehicles">ZF Employee Vehicles</div>
           </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:9px;color:var(--text3)">FROM</span>
+          <input type="month" id="chart-from" class="form-input" style="padding:4px 8px;font-size:11px" onchange="renderFleetChart()">
+          <span style="font-size:9px;color:var(--text3)">TO</span>
+          <input type="month" id="chart-to" class="form-input" style="padding:4px 8px;font-size:11px" onchange="renderFleetChart()">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('chart-from').value='';document.getElementById('chart-to').value='';renderFleetChart()" style="font-size:9px">Clear</button>
         </div>
         <svg class="fleet-chart-svg" id="fleet-chart" viewBox="0 0 800 280"><line x1="60" y1="240" x2="780" y2="240" stroke="var(--border)" stroke-width="1"></line><line x1="60" y1="20" x2="60" y2="240" stroke="var(--border)" stroke-width="1"></line><line x1="60" y1="20" x2="780" y2="20" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="23" font-size="9" fill="var(--text3)" text-anchor="end">5,572</text><line x1="60" y1="75" x2="780" y2="75" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="78" font-size="9" fill="var(--text3)" text-anchor="end">4,179</text><line x1="60" y1="130" x2="780" y2="130" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="133" font-size="9" fill="var(--text3)" text-anchor="end">2,786</text><line x1="60" y1="185" x2="780" y2="185" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="188" font-size="9" fill="var(--text3)" text-anchor="end">1,393</text><line x1="60" y1="240" x2="780" y2="240" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="243" font-size="9" fill="var(--text3)" text-anchor="end">0</text><text x="60" y="254" font-size="12" fill="var(--text2)" text-anchor="middle" font-weight="700">Week 1</text><text x="780" y="254" font-size="12" fill="var(--text2)" text-anchor="middle" font-weight="700">Week 2</text><polyline points="60,20 780,178.97285152324346" fill="none" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="60" cy="20" r="6" fill="#378ADD" stroke="var(--bg2)" stroke-width="2"><title>Fuel W1: SAR 5.6K</title></circle><text x="60" y="10" font-size="10" fill="#378ADD" text-anchor="middle" font-weight="600">5.6K</text><circle cx="780" cy="178.97285152324346" r="6" fill="#378ADD" stroke="var(--bg2)" stroke-width="2"><title>Fuel W2: SAR 1.5K</title></circle><text x="780" y="168.97285152324346" font-size="10" fill="#378ADD" text-anchor="middle" font-weight="600">1.5K</text><polyline points="60,240 780,240" fill="none" stroke="#e24b4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="60" cy="240" r="6" fill="#e24b4a" stroke="var(--bg2)" stroke-width="2"><title>Maint W1: SAR 0</title></circle><circle cx="780" cy="240" r="6" fill="#e24b4a" stroke="var(--bg2)" stroke-width="2"><title>Maint W2: SAR 0</title></circle></svg>
         <div id="fleet-chart-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:10px;color:var(--text2)"><div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#378ADD;border-radius:1px"></div>⛽ Fuel Cost</div><div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#e24b4a;border-radius:1px"></div>🔧 Maintenance</div></div>
@@ -4761,6 +4768,8 @@ async function fetchJSON(url) {
 }
 
 async function loadAllData() {
+  const refreshEl = document.getElementById('last-refresh-time');
+  if(refreshEl) refreshEl.textContent = '⟳';
   const tasks = [
     {key:'daily',              fn:() => fetchCSV(SOURCES.daily)},
     {key:'prices',             fn:() => fetchCSV(SOURCES.prices)},
@@ -6738,49 +6747,110 @@ function renderFleetGrid() {
 function renderFleetChart() {
   const svg = document.getElementById('fleet-chart');
   const legend = document.getElementById('fleet-chart-legend');
-  const now = new Date();
-  const totalW = Math.ceil(now.getDate()/7);
-  const wFuel={}, wMaint={};
-  for(let w=1;w<=totalW;w++){wFuel['W'+w]=0;wMaint['W'+w]=0;}
+  if (!svg) return;
+  
   const chartFilter = STATE.filter.chart || 'all';
-
+  const chartFrom = document.getElementById('chart-from')?.value || '';
+  const chartTo   = document.getElementById('chart-to')?.value || '';
+  
+  // Build monthly data
+  const mFuel={}, mMaint={};
+  
   STATE.fuel.forEach(r=>{
     const date=parseDate(r['التاريخ']||r['Date']);
-    if(!date||!isCurrentMonth(date)) return;
+    if(!date||isNaN(date)) return;
+    const mk=getMonthKey(date);
+    if(chartFrom && mk<chartFrom) return;
+    if(chartTo   && mk>chartTo)   return;
     const vType=plateType(r['المركبة']||r['Plate']||'');
-    if(chartFilter!=='all') {
-      const filters = chartFilter.split(',');
+    if(chartFilter!=='all'){
+      const filters=chartFilter.split(',');
       if(!filters.includes(vType)) return;
     }
-    const wk='W'+Math.ceil(date.getUTCDate()/7);
-    wFuel[wk]=(wFuel[wk]||0)+parseAmount(r['التكلفة']||r['Cost']);
+    const cost=parseAmount(r['التكلفة']||r['Cost']||0);
+    mFuel[mk]=(mFuel[mk]||0)+cost;
   });
+  
   STATE.maintenance.forEach(r=>{
     const date=parseDate(r['Date']||r['date']);
-    if(!date||!isCurrentMonth(date)) return;
+    if(!date||isNaN(date)) return;
+    const mk=getMonthKey(date);
+    if(chartFrom && mk<chartFrom) return;
+    if(chartTo   && mk>chartTo)   return;
     const vType=plateType((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
-    if(vType==='ZF Employee Vehicles') return;
-    if(chartFilter!=='all' && vType!==chartFilter) return;
-    const wk='W'+Math.ceil(date.getUTCDate()/7);
-    wMaint[wk]=(wMaint[wk]||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
+    if(chartFilter!=='all'){
+      const filters=chartFilter.split(',');
+      if(!filters.includes(vType)) return;
+    }
+    const cost=parseAmount(r['cost']||r['Amount']||r['amount']||0);
+    mMaint[mk]=(mMaint[mk]||0)+cost;
   });
-  const weeks=Object.keys(wFuel).sort();
-  const maxVal=Math.max(1,...weeks.map(wk=>Math.max(wFuel[wk]||0,wMaint[wk]||0)));
-  const W=800,H=280,pL=60,pR=20,pT=20,pB=40;
-  const xStep=weeks.length>1?(W-pL-pR)/(weeks.length-1):(W-pL-pR)/2;
-  let s='';
-  s+=`<line x1="${pL}" y1="${H-pB}" x2="${W-pR}" y2="${H-pB}" stroke="var(--border)" stroke-width="1"/>`;
-  s+=`<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${H-pB}" stroke="var(--border)" stroke-width="1"/>`;
-  for(let i=0;i<=4;i++){const y=pT+(H-pT-pB)*i/4,val=maxVal*(1-i/4);s+=`<line x1="${pL}" y1="${y}" x2="${W-pR}" y2="${y}" stroke="var(--border)" stroke-width="0.3" opacity="0.4"/>`;s+=`<text x="${pL-5}" y="${y+3}" font-size="9" fill="var(--text3)" text-anchor="end">${Math.round(val).toLocaleString()}</text>`;}
-  weeks.forEach((wk,i)=>{s+=`<text x="${pL+i*xStep}" y="${H-pB+14}" font-size="12" fill="var(--text2)" text-anchor="middle" font-weight="700">Week ${wk.slice(1)}</text>`;});
-  const fp=weeks.map((wk,i)=>({x:pL+i*xStep,y:(H-pB)-(wFuel[wk]||0)/maxVal*(H-pT-pB),v:wFuel[wk]||0,wk}));
-  s+=`<polyline points="${fp.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  fp.forEach(p=>{s+=`<circle cx="${p.x}" cy="${p.y}" r="6" fill="#378ADD" stroke="var(--bg2)" stroke-width="2"><title>Fuel ${p.wk}: ${fmtShort(p.v)}</title></circle>`;if(p.v>0)s+=`<text x="${p.x}" y="${p.y-10}" font-size="10" fill="#378ADD" text-anchor="middle" font-weight="600">${(p.v/1000).toFixed(1)}K</text>`;});
-  const mp=weeks.map((wk,i)=>({x:pL+i*xStep,y:(H-pB)-(wMaint[wk]||0)/maxVal*(H-pT-pB),v:wMaint[wk]||0,wk}));
-  s+=`<polyline points="${mp.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="#e24b4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  mp.forEach(p=>{s+=`<circle cx="${p.x}" cy="${p.y}" r="6" fill="#e24b4a" stroke="var(--bg2)" stroke-width="2"><title>Maint ${p.wk}: ${fmtShort(p.v)}</title></circle>`;if(p.v>0)s+=`<text x="${p.x}" y="${p.y-10}" font-size="10" fill="#e24b4a" text-anchor="middle" font-weight="600">${(p.v/1000).toFixed(1)}K</text>`;});
-  svg.innerHTML=s;
-  if(legend) legend.innerHTML=`<div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#378ADD;border-radius:1px"></div>⛽ Fuel Cost</div><div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#e24b4a;border-radius:1px"></div>🔧 Maintenance</div>`;
+  
+  // If no date range, default to last 6 months
+  const allMonths=[...new Set([...Object.keys(mFuel),...Object.keys(mMaint)])].sort();
+  const months = allMonths.length ? allMonths : [];
+  
+  if(!months.length){
+    svg.innerHTML='<text x="400" y="140" text-anchor="middle" fill="var(--text3)" font-size="12">No data for selected filters</text>';
+    return;
+  }
+  
+  const W=800, H=280, pL=70, pR=20, pT=20, pB=40;
+  const maxVal=Math.max(1,...months.map(mk=>Math.max(mFuel[mk]||0,mMaint[mk]||0)));
+  const barW=Math.min(30, (W-pL-pR)/(months.length*2.5));
+  const gap=(W-pL-pR)/months.length;
+  
+  const scaleY = v => pT + (H-pT-pB)*(1-v/maxVal);
+  const fmtK = v => v>=1000?Math.round(v/100)/10+'K':Math.round(v).toString();
+  
+  let svgHtml = '';
+  
+  // Grid lines
+  for(let i=0;i<=4;i++){
+    const y=pT+(H-pT-pB)*i/4;
+    const val=maxVal*(1-i/4);
+    svgHtml+=`<line x1="${pL}" y1="${y}" x2="${W-pR}" y2="${y}" stroke="var(--border)" stroke-width="${i===4?1:0.3}" opacity="${i===4?1:0.4}"/>`;
+    svgHtml+=`<text x="${pL-5}" y="${y+4}" font-size="9" fill="var(--text3)" text-anchor="end">${fmtK(val)}</text>`;
+  }
+  
+  // Bars + tooltips
+  months.forEach((mk, i) => {
+    const x = pL + gap*i + gap/2;
+    const fuelH = mFuel[mk]||0;
+    const maintH = mMaint[mk]||0;
+    const fuelY = scaleY(fuelH);
+    const maintY = scaleY(maintH);
+    
+    const d = new Date(mk+'-15T12:00:00Z');
+    const label = d.toLocaleDateString('en-US',{month:'short'});
+    
+    // Fuel bar
+    svgHtml+=`<rect x="${x-barW-1}" y="${fuelY}" width="${barW}" height="${H-pB-fuelY}" fill="#378ADD" rx="2" opacity="0.85">
+      <title>${label} Fuel: SAR ${Math.round(fuelH).toLocaleString()}</title>
+    </rect>`;
+    
+    // Maint bar
+    if(maintH>0){
+      svgHtml+=`<rect x="${x+1}" y="${maintY}" width="${barW}" height="${H-pB-maintY}" fill="#e24b4a" rx="2" opacity="0.85">
+        <title>${label} Maintenance: SAR ${Math.round(maintH).toLocaleString()}</title>
+      </rect>`;
+    }
+    
+    // Value labels
+    if(fuelH>0) svgHtml+=`<text x="${x-barW/2-1}" y="${fuelY-3}" font-size="8" fill="#378ADD" text-anchor="middle">${fmtK(fuelH)}</text>`;
+    if(maintH>0) svgHtml+=`<text x="${x+barW/2+1}" y="${maintY-3}" font-size="8" fill="#e24b4a" text-anchor="middle">${fmtK(maintH)}</text>`;
+    
+    // Month label
+    svgHtml+=`<text x="${x}" y="${H-pB+14}" font-size="9" fill="var(--text3)" text-anchor="middle">${label} ${d.getFullYear()}</text>`;
+  });
+  
+  svg.innerHTML=svgHtml;
+  
+  if(legend){
+    legend.innerHTML=`
+      <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;background:#378ADD;border-radius:2px"></div>Fuel Cost</div>
+      <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;background:#e24b4a;border-radius:2px"></div>Maintenance Cost</div>`;
+  }
 }
 
 
@@ -7245,10 +7315,12 @@ function renderFleetHist(){
     if(date&&!isNaN(date)) months.add(getMonthKey(date));
   });
   const monthSel=document.getElementById('fh-month');
-  if(monthSel&&monthSel.children.length<=1){
-    [...months].sort().forEach(mk=>{
+  if(monthSel){
+    const prevM=monthSel.value;
+    monthSel.innerHTML='<option value="all">All Months</option>';
+    [...months].sort().reverse().forEach(mk=>{
       const d=new Date(mk+'-15T12:00:00Z');
-      monthSel.innerHTML+=`<option value="${mk}">${getMonthName(d)} ${d.getFullYear()}</option>`;
+      monthSel.innerHTML+=`<option value="${mk}"${mk===prevM?' selected':''}>${getMonthName(d)} ${d.getFullYear()}</option>`;
     });
   }
 
@@ -7350,8 +7422,8 @@ function renderFleetHist(){
         const date=parseDate(r['Date']||r['date']);
         if(!date||isNaN(date)) return;
         const mk=getMonthKey(date);
-        if(mk!==fMonth) return;
-        if((r['Plate']||'').trim()===v.plate){maint+=parseAmount(r['Amount']||r['amount']);invoices++;}
+        if(fMonth!=='all'&&mk!==fMonth) return;
+        if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);invoices++;}
       });
       const baseline2 = getBaselineKM(v.plate, s.km);
       const kmDriven2 = s.km>0 ? (baseline2&&s.km>baseline2 ? s.km-baseline2 : 0) : 0;
