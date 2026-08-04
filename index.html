@@ -4572,7 +4572,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
 
 
 
-const API = 'https://script.google.com/macros/s/AKfycbxB_MpLpdHRnbJGR-jg0l4r1kbOKpzNzuFF9gbYt8SUxtCVNo8YudaY8nXl2H-fB2KkqA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbwUCF95MufYlHejpTi24pCV9Rk7nDtFnHYi31clGg1dBlQaYZWjxX6ISYXB9D_Wl7zrIA/exec';
 
 const SOURCES = {
   sales:         API + '?type=main&origin=' + encodeURIComponent(location.hostname),
@@ -6710,6 +6710,8 @@ function renderFleetGrid() {
     }
     const l100km = kmDriven > 0 && s.liters > 0 ? (s.liters/kmDriven*100).toFixed(1) : '—';
     const typeColor = {Transfer:'var(--blue)',Online:'var(--green)',Support:'var(--purple)'}[v.type]||'var(--green)';
+    const visible = filter === 'All' || v.type === filter || v.city === filter;
+    const hiddenStyle = visible ? '' : 'display:none;';
     return `<div class="fc-card" data-type="${v.type}" data-city="${v.city}" style="transition:border-color 0.2s;${hiddenStyle}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div class="fc-plate" style="font-size:14px">${v.plate}</div>
@@ -8029,7 +8031,7 @@ async function saveMaintenanceRecord() {
 
   try {
     // Use no-cors mode (CORS workaround for Apps Script)
-    await fetch('https://script.google.com/macros/s/AKfycbxB_MpLpdHRnbJGR-jg0l4r1kbOKpzNzuFF9gbYt8SUxtCVNo8YudaY8nXl2H-fB2KkqA/exec', {
+    await fetch('https://script.google.com/macros/s/AKfycbwUCF95MufYlHejpTi24pCV9Rk7nDtFnHYi31clGg1dBlQaYZWjxX6ISYXB9D_Wl7zrIA/exec', {
       method: 'POST',
       mode: 'no-cors',
       headers: {'Content-Type': 'text/plain'},
@@ -8945,9 +8947,17 @@ function renderFHVehicleCards() {
     vehicleStats[plate].maint += parseAmount(r['cost']||r['Amount']||0);
   });
 
-  // Calculate KM driven = lastKm - firstKm in selected period
+  // Calculate KM driven - match table logic
   Object.values(vehicleStats).forEach(v => {
-    v.kmDriven = v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0;
+    if (!fMonth) {
+      // All months: use lastKm - baseline (same as table)
+      const base = getBaselineKM(v.plate, v.lastKm) || 0;
+      v.kmDriven = v.lastKm > 0 && base > 0 && v.lastKm > base ? v.lastKm - base : 
+                   (v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0);
+    } else {
+      // Specific month: use lastKm - firstKm in that month
+      v.kmDriven = v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0;
+    }
   });
 
   const cards = Object.values(vehicleStats).filter(v => v.fuel > 0 || v.maint > 0 || v.lastKm > 0);
