@@ -7418,6 +7418,7 @@ function renderFleetHist(){
         }
         const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
         if(km>lastKmAll) lastKmAll=km;
+        if(km>0&&(firstKmAll===0||km<firstKmAll)) firstKmAll=km;
       });
       const totKm = lastKmAll > 0 && firstKmAll > 0 && lastKmAll > firstKmAll ? lastKmAll-firstKmAll : 0;
       // Maintenance
