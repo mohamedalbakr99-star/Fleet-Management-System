@@ -7395,8 +7395,7 @@ function renderFleetHist(){
       const totFuel=Object.values(monthStats).reduce((s,m)=>s+m.fuel,0);
       const totLiters=Object.values(monthStats).reduce((s,m)=>s+m.liters,0);
       // KM: use last KM reading - baseline
-      const baseline = getBaselineKM(v.plate, 0) || 0;
-      let lastKmAll=0;
+      let lastKmAll=0, firstKmAll=0;
       STATE.fuel.forEach(r=>{
         const rPlateRaw=(r['المركبة']||r['Plate']||'').trim();
         const rNorm=rPlateRaw.replace(/\s+/g,' ').trim();
@@ -7420,7 +7419,7 @@ function renderFleetHist(){
         const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
         if(km>lastKmAll) lastKmAll=km;
       });
-      const totKm = lastKmAll && baseline ? lastKmAll-baseline : lastKmAll;
+      const totKm = lastKmAll > 0 && firstKmAll > 0 && lastKmAll > firstKmAll ? lastKmAll-firstKmAll : 0;
       // Maintenance
       let totMaint=0,totInv=0;
       STATE.maintenance.forEach(r=>{const mp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();if(mp===v.plate){totMaint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);totInv++;}});
