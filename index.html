@@ -8946,17 +8946,9 @@ function renderFHVehicleCards() {
     vehicleStats[plate].maint += parseAmount(r['cost']||r['Amount']||0);
   });
 
-  // Calculate KM driven - match table logic
+  // Calculate KM driven = lastKm - firstKm from fuel records (same as table)
   Object.values(vehicleStats).forEach(v => {
-    if (!fMonth) {
-      // All months: use lastKm - baseline (same as table)
-      const base = getBaselineKM(v.plate, v.lastKm) || 0;
-      v.kmDriven = v.lastKm > 0 && base > 0 && v.lastKm > base ? v.lastKm - base : 
-                   (v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0);
-    } else {
-      // Specific month: use lastKm - firstKm in that month
-      v.kmDriven = v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0;
-    }
+    v.kmDriven = v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0;
   });
 
   const cards = Object.values(vehicleStats).filter(v => v.fuel > 0 || v.maint > 0 || v.lastKm > 0);
