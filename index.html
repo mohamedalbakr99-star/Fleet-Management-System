@@ -7367,11 +7367,12 @@ function renderFleetHist(){
         const betterMatch=partialMatch&&STATE.fleet.some(v2=>v2.plate!==v.plate&&extractDigits(v2.plate)===rNum);
         if(!fullMatch&&(!partialMatch||betterMatch)) return;
       }
-      if(!monthStats[mk]) monthStats[mk]={fuel:0,liters:0,km:0};
+      if(!monthStats[mk]) monthStats[mk]={fuel:0,liters:0,km:0,firstKm:0};
       monthStats[mk].fuel+=parseAmount(r['التكلفة']||r['Cost']);
       monthStats[mk].liters+=parseAmount(r['عدد اللترات']||r['Liters']);
       const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
       if(km>monthStats[mk].km) monthStats[mk].km=km;
+      if(km>0&&(monthStats[mk].firstKm===0||km<monthStats[mk].firstKm)) monthStats[mk].firstKm=km;
     });
 
     if(fMonth==='all'){
@@ -7421,8 +7422,8 @@ function renderFleetHist(){
         if(fMonth!=='all'&&mk!==fMonth) return;
         if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);invoices++;}
       });
-      const baseline2 = getBaselineKM(v.plate, s.km);
-      const kmDriven2 = s.km>0 ? (baseline2&&s.km>baseline2 ? s.km-baseline2 : 0) : 0;
+      // KM Driven for selected month = lastKm - firstKm in that month
+      const kmDriven2 = s.km>0 && s.firstKm>0 && s.km>s.firstKm ? s.km-s.firstKm : 0;
       if(s.fuel>0||maint>0) rows.push({plate:v.plate,type,mk:fMonth,fuel:s.fuel,liters:s.liters,km:s.km,kmDriven:kmDriven2,maint,invoices});
     }
   });
