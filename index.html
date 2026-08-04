@@ -7303,10 +7303,13 @@ function renderFleetHist(){
 
   // Populate month selector
   const months=new Set();
-  STATE.fuel.forEach(r=>{
-    const date=parseDate(r['التاريخ']||r['Date']);
-    if(date&&!isNaN(date)) months.add(getMonthKey(date));
-  });
+  months.add(getMonthKey(new Date())); // Always current month
+  STATE.fuel.forEach(r=>{const d=parseDate(r['التاريخ']||r['Date']);if(d&&!isNaN(d))months.add(getMonthKey(d));});
+  STATE.maintenance.forEach(r=>{const d=parseDate(r['Date']||r['date']);if(d&&!isNaN(d))months.add(getMonthKey(d));});
+  STATE.daily.forEach(r=>{const d=parseDate(r['Date']||r['date']);if(d&&!isNaN(d))months.add(getMonthKey(d));});
+  const allSalesFH=[...(Array.isArray(STATE.sales)?STATE.sales:(STATE.sales?.data||[])),
+                    ...(Array.isArray(STATE.salesHist)?STATE.salesHist:(STATE.salesHist?.data||[]))];
+  allSalesFH.forEach(r=>{const d=parseDate(r['Date ']||r['Date']);if(d&&!isNaN(d))months.add(getMonthKey(d));});
   const monthSel=document.getElementById('fh-month');
   if(monthSel){
     const prevM=monthSel.value;
