@@ -6697,17 +6697,14 @@ function renderFleetGrid() {
   grid.innerHTML = filtered.map(v => {
     const s = vehStats[v.plate] || {fuel:0, maint:0, lastKm:0, firstKm:0, liters:0};
     const baseline = getBaselineKM(v.plate, s.lastKm);
+    // KM Driven = current month only (firstKm to lastKm this month)
     let kmDriven = 0;
-    if (s.lastKm > 0) {
-      if (baseline && s.lastKm > baseline) {
-        kmDriven = s.lastKm - baseline;
-      } else if (s.firstKm > 0 && s.lastKm > s.firstKm) {
-        kmDriven = s.lastKm - s.firstKm;
-      }
+    if (s.fuel > 0 && s.lastKm > 0 && s.firstKm > 0 && s.lastKm > s.firstKm) {
+      kmDriven = s.lastKm - s.firstKm;
     }
     const l100km = kmDriven > 0 && s.liters > 0 ? (s.liters/kmDriven*100).toFixed(1) : '—';
     const typeColor = {Transfer:'var(--blue)',Online:'var(--green)',Support:'var(--purple)'}[v.type]||'var(--green)';
-    return `<div class="fc-card" data-type="${v.type}" data-city="${v.city}" style="transition:border-color 0.2s">
+    return `<div class="fc-card" data-type="${v.type}" data-city="${v.city}" style="transition:border-color 0.2s;${hiddenStyle}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div class="fc-plate" style="font-size:14px">${v.plate}</div>
         <span class="badge ${colorMap[v.type]||'bg'}" style="font-size:9px">${v.type}</span>
@@ -8932,10 +8929,9 @@ function renderFHVehicleCards() {
     vehicleStats[plate].maint += parseAmount(r['cost']||r['Amount']||0);
   });
 
-  // Calculate KM driven
+  // Calculate KM driven = lastKm - firstKm in selected period
   Object.values(vehicleStats).forEach(v => {
-    const base = getBaselineKM(v.plate, v.lastKm);
-    v.kmDriven = v.lastKm > 0 ? (base && v.lastKm > base ? v.lastKm - base : (v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0)) : 0;
+    v.kmDriven = v.lastKm > 0 && v.firstKm > 0 && v.lastKm > v.firstKm ? v.lastKm - v.firstKm : 0;
   });
 
   const cards = Object.values(vehicleStats).filter(v => v.fuel > 0 || v.maint > 0 || v.lastKm > 0);
