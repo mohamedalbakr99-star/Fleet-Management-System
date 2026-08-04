@@ -962,7 +962,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <!-- Month selector -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <div style="font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Month:</div>
-        <select class="form-select" id="hist-month-sel" onchange="renderHistorical()" style="padding:5px 10px;font-size:12px;font-weight:600"><option value="all">All Months</option><option value="2026-01">Jan 2026</option><option value="2026-02">Feb 2026</option><option value="2026-03">Mar 2026</option><option value="2026-04">Apr 2026</option><option value="2026-05">May 2026</option><option value="2026-06">Jun 2026</option></select>
+        <select class="form-select" id="hist-month-sel" onchange="renderHistorical()" style="padding:5px 10px;font-size:12px;font-weight:600"><option value="all">All Months</option></select>
         <div style="flex:1"></div>
         <button class="btn btn-ghost btn-sm" onclick="exportHistoricalExcel()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -7695,6 +7695,7 @@ function renderVehicleTable() {
 
     // Get stats from fuel data
     let fuel=0, liters=0, lastKm=0, firstKm=0, maint=0, invoices=0;
+    let curMonthFirstKm=0, curMonthLastKm=0;
     STATE.fuel.forEach(r => {
       const date = parseDate(r['التاريخ']||r['Date']||'');
       const rPlate = (r['المركبة']||r['Plate']||'').trim();
@@ -7729,6 +7730,8 @@ function renderVehicleTable() {
         fuel += parseAmount(r['التكلفة']||r['Cost']);
         liters += parseAmount(r['عدد اللترات']||r['Liters']);
         if(km>0&&(firstKm===0||km<firstKm)) firstKm=km;
+        if(km>curMonthLastKm) curMonthLastKm=km;
+        if(km>0&&(curMonthFirstKm===0||km<curMonthFirstKm)) curMonthFirstKm=km;
       }
     });
     STATE.maintenance.forEach(r => {
@@ -7741,7 +7744,10 @@ function renderVehicleTable() {
     });
 
     const baseline = getBaselineKM(v.plate, lastKm);
-    const kmDriven = lastKm>0 ? (baseline&&lastKm>baseline ? lastKm-baseline : (firstKm>0&&lastKm>firstKm ? lastKm-firstKm : 0)) : 0;
+    // KM Driven from current month only; lastKm always shows latest reading
+    const kmDriven = curMonthLastKm>0 && curMonthFirstKm>0 && curMonthLastKm>curMonthFirstKm ? 
+      curMonthLastKm-curMonthFirstKm : (curMonthLastKm>0 && baseline>0 && curMonthLastKm>baseline ? 
+      curMonthLastKm-baseline : 0);
     const l100 = kmDriven>0&&liters>0 ? liters/kmDriven*100 : 0;
     const kmPerL = liters>0 ? kmDriven/liters : 0;
     const maintPerKm = kmDriven>0&&maint>0 ? maint/kmDriven : 0;
@@ -8026,7 +8032,7 @@ async function saveMaintenanceRecord() {
 
 
 function renderRentalHist(){
-  const fMonth=document.getElementById('rh-month')?.value||'';
+  const fMonth=document.getElementById('rh-month')?.value||'all';
   const fComp=document.getElementById('rh-company')?.value||'';
   const fDest=document.getElementById('rh-dest')?.value||'';
 
@@ -8261,7 +8267,7 @@ function renderRentalHist(){
       const dest=(r['Destination']||'').trim();
       const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
       if(cost===0) return false;
-      if(tMonth && mk!==tMonth) return false;
+      if(tMonth && tMonth!=='' && mk!==tMonth) return false;
       if(tComp && comp!==tComp) return false;
       if(tDest && dest!==tDest) return false;
       if(tFrom && dk<tFrom) return false;
