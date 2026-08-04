@@ -4134,6 +4134,12 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
             <div class="chart-title" style="margin-bottom:1px">Monthly Cost per Vehicle</div>
             <div style="font-size:9px;color:var(--text3)">Line chart of fuel cost across months</div>
           </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:9px;color:var(--text3)">FROM</span>
+            <input type="month" id="fh-chart-from" class="form-input" style="padding:3px 6px;font-size:10px" onchange="renderFHChart()">
+            <span style="font-size:9px;color:var(--text3)">TO</span>
+            <input type="month" id="fh-chart-to" class="form-input" style="padding:3px 6px;font-size:10px" onchange="renderFHChart()">
+          </div>
           <div id="fh-chart-legend" style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:var(--text2);max-width:50%">
     <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#378ADD;border-radius:1px"></div>Fuel Cost</div>
     <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#e24b4a;border-radius:1px"></div>Maintenance Cost</div></div>
@@ -6850,14 +6856,24 @@ function renderFHChart() {
   if (!svg) return;
 
   // Build monthly fuel + maint totals (all vehicles)
+  const fhChartFrom = document.getElementById('fh-chart-from')?.value || '';
+  const fhChartTo   = document.getElementById('fh-chart-to')?.value || '';
   const monthSet = new Set();
   STATE.fuel.forEach(r => {
     const date = parseDate(r['التاريخ']||r['Date']);
-    if(date&&!isNaN(date)) monthSet.add(getMonthKey(date));
+    if(!date||isNaN(date)) return;
+    const mk = getMonthKey(date);
+    if(fhChartFrom && mk<fhChartFrom) return;
+    if(fhChartTo   && mk>fhChartTo)   return;
+    monthSet.add(mk);
   });
   STATE.maintenance.forEach(r => {
     const date = parseDate(r['Date']||r['date']);
-    if(date&&!isNaN(date)) monthSet.add(getMonthKey(date));
+    if(!date||isNaN(date)) return;
+    const mk = getMonthKey(date);
+    if(fhChartFrom && mk<fhChartFrom) return;
+    if(fhChartTo   && mk>fhChartTo)   return;
+    monthSet.add(mk);
   });
 
   const months = [...monthSet].sort();
