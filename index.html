@@ -5607,11 +5607,12 @@ function renderHistorical() {
   // Populate month selectors
   ['hist-month-sel','hdest-month','hcomp-month','htrip-month'].forEach(id => {
     const el = document.getElementById(id);
-    if (!el || el.children.length > 2) return;
+    if (!el) return;
     const isTrip = id === 'htrip-month';
     const defaultOpt = isTrip ? '<option value="">Select Month...</option>' : '<option value="all">All Months</option>';
+    const prevVal = el.value;
     el.innerHTML = defaultOpt + allMonths.map(([mk, m]) =>
-      `<option value="${mk}">${getMonthName(m.date)} ${m.date.getFullYear()}</option>`
+      `<option value="${mk}"${mk===prevVal?' selected':''}>${getMonthName(m.date)} ${m.date.getFullYear()}</option>`
     ).join('');
   });
 
