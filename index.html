@@ -3770,7 +3770,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <button class="btn btn-ghost btn-sm" id="fhkpi-zf" onclick="setFleetHistKpiTab('ZF Employee Vehicles')">ZF Employee</button>
         <select class="form-select" id="fhkpi-month" onchange="renderFleetHistKPIs()" style="padding:5px 8px;font-size:11px;margin-left:8px">
           <option value="all">All Months</option>
-        <option value="2026-06">Jun 2026</option></select>
+        </select>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
         <div class="kpi-card" style="padding:14px">
@@ -3812,7 +3812,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <div style="font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Filter:</div>
         <select class="form-select" id="fh-month" onchange="renderFleetHist()" style="padding:5px 10px;font-size:11px">
           <option value="all">All Months</option>
-        <option value="2026-06">Jun 2026</option></select>
+        </select>
         <button class="btn btn-primary btn-sm" id="fhtab-all" onclick="setFHTab('all')">All</button>
         <button class="btn btn-ghost btn-sm" id="fhtab-online" onclick="setFHTab('online')">Local Trucks</button>
         <button class="btn btn-ghost btn-sm" id="fhtab-transfer" onclick="setFHTab('transfer')">Shuttling Trucks</button>
@@ -4197,7 +4197,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
         <select class="form-select" id="rh-month" onchange="renderRentalHist()" style="padding:5px 10px;font-size:12px;font-weight:600">
           <option value="all">All Months</option>
-        <option value="2026-06">Jun 2026</option></select>
+        </select>
         <select class="form-select" id="rh-company" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px"><option value="">All Companies</option><option>Afaq Al Nama</option><option>Ajex</option><option>NTC</option><option>Nawaqel Al khalij</option><option>TSB 2096</option><option>VRB 4654</option></select>
         <select class="form-select" id="rh-dest" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px"><option value="">All Destinations</option><option>Alhasa</option><option>Dammam</option><option>Jeddah</option><option>Jubail</option><option>Qassim Province</option><option>Riyadh</option></select>
         <button class="btn btn-ghost btn-sm" onclick="exportRentalHist()">📥 Export</button>
