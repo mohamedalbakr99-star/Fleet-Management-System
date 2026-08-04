@@ -8919,11 +8919,19 @@ function renderFHVehicleCards() {
     if (!d || isNaN(d)) return;
     const mk = getMonthKey(d);
     if (fMonth && mk !== fMonth) return;
-    const v = STATE.fleet.find(v2 => {
-      const rNorm = (r['المركبة']||r['Plate']||'').trim();
-      if (v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim() === rNorm.replace(/\s+/g,' ');
-      return extractDigits(v2.plate) === extractDigits(rNorm);
-    });
+    const rPlateRaw = (r['المركبة']||r['Plate']||'').trim();
+    const rNorm = rPlateRaw.replace(/\s+/g,' ');
+    const rNum = extractDigits(rPlateRaw);
+    let v = null;
+    for (const v2 of STATE.fleet) {
+      if (!vehicleStats[v2.plate]) continue;
+      if (v2.arPlate) {
+        if (v2.arPlate.replace(/\s+/g,' ').trim() === rNorm) { v = v2; break; }
+      } else {
+        const vNum = extractDigits(v2.plate);
+        if (rNum === vNum || rNum.endsWith(vNum.slice(-4)) || vNum.endsWith(rNum.slice(-4))) { v = v2; break; }
+      }
+    }
     if (!v || !vehicleStats[v.plate]) return;
     const cost = parseAmount(r['التكلفة']||r['Cost']||0);
     const liters = parseAmount(r['الكمية']||r['Liters']||0);
