@@ -7744,10 +7744,9 @@ function renderVehicleTable() {
     });
 
     const baseline = getBaselineKM(v.plate, lastKm);
-    // KM Driven from current month only; lastKm always shows latest reading
-    const kmDriven = curMonthLastKm>0 && curMonthFirstKm>0 && curMonthLastKm>curMonthFirstKm ? 
-      curMonthLastKm-curMonthFirstKm : (curMonthLastKm>0 && baseline>0 && curMonthLastKm>baseline ? 
-      curMonthLastKm-baseline : 0);
+    // KM Driven from current month only - 0 if no current month fuel
+    const kmDriven = fuel>0 && curMonthLastKm>0 && curMonthFirstKm>0 && curMonthLastKm>curMonthFirstKm ?
+      curMonthLastKm-curMonthFirstKm : 0;
     const l100 = kmDriven>0&&liters>0 ? liters/kmDriven*100 : 0;
     const kmPerL = liters>0 ? kmDriven/liters : 0;
     const maintPerKm = kmDriven>0&&maint>0 ? maint/kmDriven : 0;
