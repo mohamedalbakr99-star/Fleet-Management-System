@@ -4848,8 +4848,8 @@ function parseDate(s) {
     }
   }
   // Format: "01/06/2026" (dd/mm/yyyy)
-  // Format: MM/DD/YYYY (Google Sheets default)
-  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  // Format: MM/DD/YYYY or MM/DD/YYYY HH:MM:SS (Google Sheets default)
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(\s.*)?$/);
   if (m2) {
     const yr2 = m2[3].length===2 ? 2000+parseInt(m2[3]) : parseInt(m2[3]);
     return new Date(Date.UTC(yr2, parseInt(m2[1])-1, parseInt(m2[2]))); // MM/DD/YYYY
