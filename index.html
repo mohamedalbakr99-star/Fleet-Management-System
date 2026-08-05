@@ -7163,6 +7163,7 @@ function renderAlarms() {
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead><tr>
             <th style="text-align:left;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Maintenance Item</th>
+            <th style="text-align:right;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Cost</th>
             <th style="text-align:right;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Next KM</th>
             <th style="text-align:right;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Remaining</th>
             <th style="text-align:left;padding:5px 8px;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border)">Last Date</th>
@@ -7174,8 +7175,10 @@ function renderAlarms() {
               const col  = a.remaining<=0?'var(--red)':a.remaining<=300?'#ff6b35':a.remaining<=1000?'var(--amber)':'var(--green)';
               const tag  = a.remaining<=0?'🔴 OVERDUE':a.remaining<=300?'🟠 URGENT':a.remaining<=1000?'🟡 SOON':'🟢 OK';
               const bg   = a.remaining<=0?'rgba(226,75,74,0.06)':a.remaining<=300?'rgba(255,107,53,0.05)':a.remaining<=1000?'rgba(240,160,32,0.05)':'';
+              const costFmt = a.cost>0?'SAR '+a.cost.toLocaleString():'—';
               return `<tr style="border-top:1px solid var(--border);background:${bg}">
                 <td style="padding:6px 8px;font-weight:600">${a.item}</td>
+                <td style="padding:6px 8px;text-align:right;color:var(--amber)">${costFmt}</td>
                 <td style="padding:6px 8px;text-align:right;font-weight:700">${a.nextKm.toLocaleString()}</td>
                 <td style="padding:6px 8px;text-align:right;color:${col};font-weight:700">${a.remaining<=0?'OVERDUE':'+'+a.remaining.toLocaleString()+' km'} <span style="font-size:9px">${tag}</span></td>
                 <td style="padding:6px 8px;color:var(--text3)">${a.date?a.date.slice(0,10):'—'}</td>
