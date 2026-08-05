@@ -7474,7 +7474,7 @@ function renderFleetHist(){
   const typeBadge={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
 
   if(!display.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No data</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No data</td></tr>';
     tfoot.innerHTML=''; return;
   }
 
@@ -7490,6 +7490,7 @@ function renderFleetHist(){
     return `<tr>
       <td style="font-weight:700;color:var(--text)">${r.plate} <span style="font-size:9px;color:var(--text3)">${period}</span></td>
       <td style="text-align:center">${r.kmDriven>0?r.kmDriven.toLocaleString():'—'}</td>
+      <td style="text-align:center;color:var(--text3);font-size:10px">${r.lastKm>0?r.lastKm.toLocaleString():'—'}</td>
       <td style="background:rgba(240,160,32,0.05)">${r.liters>0?Math.round(r.liters).toLocaleString():'—'}</td>
       <td style="color:var(--blue);background:rgba(240,160,32,0.05)">${r.fuel?fmt(r.fuel):'—'}</td>
       <td style="color:var(--green);background:rgba(240,160,32,0.05)">${kmL}</td>
@@ -7818,6 +7819,7 @@ function renderVehicleTable() {
       <td style="font-weight:700;color:var(--text)">${r.plate}</td>
       <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
       <td style="text-align:center">${r.kmDriven>0?r.kmDriven.toLocaleString():'—'}</td>
+      <td style="text-align:center;color:var(--text3);font-size:10px">${r.lastKm>0?r.lastKm.toLocaleString():'—'}</td>
       <td style="background:rgba(240,160,32,0.05)">${r.liters>0?Math.round(r.liters).toLocaleString():'—'}</td>
       <td style="color:var(--blue);background:rgba(240,160,32,0.05)">${r.fuel?fmt(r.fuel):'—'}</td>
       <td style="color:var(--green);background:rgba(240,160,32,0.05)">${kmL}</td>
