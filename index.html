@@ -4667,11 +4667,19 @@ function csvToObjects(text) {
   const rows = parseCSV(text);
   if (rows.length < 2) return [];
 
-  // Find real header row: first row with 3+ non-empty cells
+  // Find real header row: first row with 3+ non-empty cells AND contains a date/id-like header
   let headerIdx = 0;
   for (let i = 0; i < Math.min(10, rows.length); i++) {
     const filled = rows[i].filter(c => c && c.trim().length > 0).length;
-    if (filled >= 3) { headerIdx = i; break; }
+    if (filled >= 3) {
+      // Check if this looks like a real header row (not a title/subtitle)
+      const rowStr = rows[i].join(',').toLowerCase();
+      const isHeader = rowStr.includes('date') || rowStr.includes('plate') || 
+                       rowStr.includes('company') || rowStr.includes('تاريخ') ||
+                       rowStr.includes('رقم') || rowStr.includes('invoice') ||
+                       rowStr.includes('المركبة') || rowStr.includes('فاتورة');
+      if (isHeader) { headerIdx = i; break; }
+    }
   }
 
   const headers = rows[headerIdx].map(h => (h || '').trim());
