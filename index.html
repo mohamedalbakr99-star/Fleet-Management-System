@@ -5118,10 +5118,10 @@ function renderCurrentMonth() {
   // ── Cost Efficiency ──
   const totalLogistics = rentalCost + fuelTr + fuelOn + maintTr + maintOn;
   const effPct = selfShipped ? (totalLogistics/selfShipped*100).toFixed(1) : '—';
-  const effCps = selfShipped ? (totalLogistics/selfShipped).toFixed(4) : '—';
+  const effCps = selfShipped ? (totalLogistics/selfShipped*100).toFixed(2) : '—';
   document.getElementById('eff-total-cost').textContent = fmtShort(totalLogistics);
   document.getElementById('eff-pct').textContent = effPct + '%';
-  document.getElementById('eff-cps').textContent = 'SAR ' + effCps;
+  document.getElementById('eff-cps').textContent = effCps + ' SAR';
 
   // ── All days ──
   const now = new Date();
