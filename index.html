@@ -1388,6 +1388,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <table>
           <thead><tr>
             <th>#</th><th onclick="sortRDest('dest')" style="cursor:pointer">Destination ↕</th>
+            <th>Origins</th>
             <th onclick="sortRDest('trips')" style="cursor:pointer">Trips ↕</th>
             <th>% Trips</th>
             <th>Est. Sales</th>
@@ -4315,6 +4316,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
           <thead><tr>
             <th>#</th>
             <th onclick="setRHDestSort('dest')" style="cursor:pointer">Destination ↕</th>
+            <th>Origins</th>
             <th onclick="setRHDestSort('trips')" style="cursor:pointer">Trips ↕</th>
             <th>% Trips</th>
             <th onclick="setRHDestSort('cost')" style="cursor:pointer">Total Cost ↕</th>
@@ -4353,6 +4355,9 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         </select>
         <select class="form-select" id="rh-trips-company" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
           <option value="">All Companies</option>
+        </select>
+        <select class="form-select" id="rh-trips-origin" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+          <option value="">All Origins</option>
         </select>
         <select class="form-select" id="rh-trips-dest" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
           <option value="">All Destinations</option>
@@ -6214,8 +6219,10 @@ function renderRentalDestAnalysis() {
     const trucks = parseAmount(r['Trucks']||1);
     if (!dest || cost===0) return;
     if (fDest && dest !== fDest) return;
-    if (!stats[dest]) stats[dest] = {trips:0, cost:0};
+    const orig = (r['Origin']||'').trim();
+    if (!stats[dest]) stats[dest] = {trips:0, cost:0, origins:new Set()};
     stats[dest].trips += trucks; stats[dest].cost += cost;
+    if(orig) stats[dest].origins.add(orig);
     totalTrips += trucks;
   });
 
@@ -6238,7 +6245,7 @@ function renderRentalDestAnalysis() {
   const entries = Object.entries(stats).sort(sortFns[_rdestSort]||sortFns.trips);
 
   if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
     tfoot.innerHTML = ''; return;
   }
 
@@ -6252,6 +6259,7 @@ function renderRentalDestAnalysis() {
     return `<tr>
       <td style="color:var(--text3)">${i+1}</td>
       <td style="font-weight:600;color:var(--text)">${dest}</td>
+      <td style="color:var(--text3);font-size:10px">${[...v.origins].join(', ')||'—'}</td>
       <td>${v.trips}</td>
       <td><span class="badge bg">${tripPct}%</span></td>
       <td style="color:var(--green)">${fmt(estSales)}</td>
@@ -6510,7 +6518,7 @@ function renderCompanyAnalysis() {
   const entries=Object.entries(stats).sort((a,b)=>b[1].trips-a[1].trips);
 
   if(!entries.length){
-    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
     tfoot.innerHTML='';
     return;
   }
@@ -8096,6 +8104,18 @@ function renderRentalHist(){
       });
     }
   });
+  // Populate origin filter
+  const origins = new Set();
+  STATE.daily.forEach(r=>{
+    const orig=(r['Origin']||'').trim();
+    if(orig&&isNaN(orig)) origins.add(orig);
+  });
+  const rhOrigSel=document.getElementById('rh-trips-origin');
+  if(rhOrigSel){
+    const prevOrig=rhOrigSel.value;
+    rhOrigSel.innerHTML='<option value="">All Origins</option>';
+    [...origins].sort().forEach(o=>{ rhOrigSel.innerHTML+=`<option value="${o}"${o===prevOrig?' selected':''}>${o}</option>`; });
+  }
   ['rh-company','rh-trips-company'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&el.children.length<=1){
@@ -8254,8 +8274,10 @@ function renderRentalHist(){
     const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
     const trucks=parseAmount(r['Trucks']||r['trucks']||0);
     if(!dest||cost===0) return;
-    if(!filteredDestStats[dest]) filteredDestStats[dest]={trips:0,cost:0};
+    const fOrig=(r['Origin']||'').trim();
+    if(!filteredDestStats[dest]) filteredDestStats[dest]={trips:0,cost:0,origins:new Set()};
     filteredDestStats[dest].trips+=trucks; filteredDestStats[dest].cost+=cost;
+    if(fOrig) filteredDestStats[dest].origins.add(fOrig);
     filteredDestTotal+=cost; filteredTripTotal+=trucks;
   });
 
@@ -8269,6 +8291,7 @@ function renderRentalHist(){
     destTbody.innerHTML=destEntries.map(([dest,v],i)=>`<tr>
       <td style="color:var(--text3)">${i+1}</td>
       <td style="font-weight:600">${dest}</td>
+      <td style="color:var(--text3);font-size:10px">${[...(v.origins||[])].join(', ')||'—'}</td>
       <td>${v.trips}</td>
       <td><span class="badge bg">${filteredTripTotal?(v.trips/filteredTripTotal*100).toFixed(1):0}%</span></td>
       <td style="color:var(--amber)">${fmt(v.cost)}</td>
@@ -8286,6 +8309,7 @@ function renderRentalHist(){
   // Trips log - use dedicated filter IDs
   const tMonth=document.getElementById('rh-trips-month')?.value||'';
   const tComp=document.getElementById('rh-trips-company')?.value||'';
+  const tOrig=document.getElementById('rh-trips-origin')?.value||'';
   const tDest=document.getElementById('rh-trips-dest')?.value||'';
   const tFrom=document.getElementById('rh-trips-from')?.value||'';
   const tTo=document.getElementById('rh-trips-to')?.value||'';
@@ -8307,6 +8331,7 @@ function renderRentalHist(){
       if(tMonth && tMonth!=='' && mk!==tMonth) return false;
       if(tComp && comp!==tComp) return false;
       if(tDest && dest!==tDest) return false;
+      if(tOrig && (r['Origin']||'').trim()!==tOrig) return false;
       if(tFrom && dk<tFrom) return false;
       if(tTo && dk>tTo) return false;
       return true;
@@ -9003,6 +9028,26 @@ function renderFHVehicleCards() {
   }).join('');
 }
 
+
+function initPriceComparisonSelects() {
+  if (!STATE.prices || !STATE.prices.length) return;
+  
+  // Get origins and destinations from prices sheet
+  const origins = [...new Set(STATE.prices.map(r=>(Object.values(r)[0]||'').trim()).filter(d=>d&&d.length<30&&isNaN(d)))].sort();
+  const dests = [...new Set(STATE.prices.map(r=>(Object.values(r)[1]||'').trim()).filter(d=>d&&d.length<30&&isNaN(d)))].sort();
+  
+  // Get company columns (all columns except Origin and Destination)
+  const companies = [...new Set(STATE.prices.flatMap(r=>Object.keys(r).filter(k=>k&&k!=='Origin'&&k!=='Destination'&&k.trim()&&parseAmount(r[k])>0)))].sort();
+  
+  const origSel = document.getElementById('cmp-origin');
+  const destSel = document.getElementById('cmp-dest');
+  const compSel = document.getElementById('cmp-company');
+  
+  if(origSel) origSel.innerHTML = '<option value="">All Origins</option>' + origins.map(o=>`<option>${o}</option>`).join('');
+  if(destSel) destSel.innerHTML = '<option value="">All Destinations</option>' + dests.map(d=>`<option>${d}</option>`).join('');
+  if(compSel) compSel.innerHTML = '<option value="">All Companies</option>' + companies.map(c=>`<option>${c}</option>`).join('');
+}
+
 function renderAll() {
   renderCurrentMonth();
   renderFleetKPIs();
@@ -9023,6 +9068,7 @@ function renderAll() {
   renderMaintItems();
   renderVC();
   initLogMaintForm();
+  initPriceComparisonSelects();
 
   document.querySelectorAll('.loading-banner').forEach(b => {
     b.className = 'loading-banner ok';
