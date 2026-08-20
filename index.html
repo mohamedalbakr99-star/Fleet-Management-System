@@ -4681,6 +4681,7 @@ function csvToObjects(text) {
       const rowStr = rows[i].join(',').toLowerCase();
       const isHeader = rowStr.includes('date') || rowStr.includes('plate') || 
                        rowStr.includes('company') || rowStr.includes('تاريخ') ||
+                       rowStr.includes('origin') || rowStr.includes('destination') ||
                        rowStr.includes('رقم') || rowStr.includes('invoice') ||
                        rowStr.includes('المركبة') || rowStr.includes('فاتورة');
       if (isHeader) { headerIdx = i; break; }
