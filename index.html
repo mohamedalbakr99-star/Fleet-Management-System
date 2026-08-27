@@ -562,9 +562,9 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
               <div style="font-size:9px;color:var(--text3)">Total Cost ÷ Own &amp; Rental Sales</div>
             </div>
             <div>
-              <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Cost per 100 SAR Sold</div>
+              <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Cost per SAR Sold</div>
               <div style="font-size:28px;font-weight:900;color:var(--green)" id="eff-cps">SAR 0.0121</div>
-              <div style="font-size:9px;color:var(--text3)">Fleet cost per 100 SAR of self-shipped sales</div>
+              <div style="font-size:9px;color:var(--text3)">Cost to deliver every 1 SAR of self-shipped sales</div>
             </div>
           </div>
         </div>
@@ -1015,7 +1015,9 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
           <button class="btn btn-primary btn-sm" id="hftab-all" onclick="setHistFleetTab('all')">All</button>
           <button class="btn btn-ghost btn-sm" id="hftab-online" onclick="setHistFleetTab('online')">Local Trucks</button>
           <button class="btn btn-ghost btn-sm" id="hftab-transfer" onclick="setHistFleetTab('transfer')">Shuttling Trucks</button>
-
+          <div style="width:1px;height:18px;background:var(--border)"></div>
+          <button class="btn btn-primary btn-sm" id="hrtab-yes" onclick="setHistRentalTab(true)">+ Rental</button>
+          <button class="btn btn-ghost btn-sm" id="hrtab-no" onclick="setHistRentalTab(false)">- Rental</button>
         </div>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -1032,7 +1034,7 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
               <th>🔧 Maint.</th>
               <th id="hsort-cost" onclick="setHistSort('cost')" style="cursor:pointer">📊 Total Cost <span id="hsort-cost-icon"></span></th>
               <th>% <small style="opacity:0.5;font-size:7px">of Self</small></th>
-              <th>⚡ Cost/100 SAR</th>
+              <th>⚡ Cost/SAR</th>
             </tr>
           </thead>
           <tbody id="hist-monthly-tbody"><tr>
@@ -1386,7 +1388,6 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         <table>
           <thead><tr>
             <th>#</th><th onclick="sortRDest('dest')" style="cursor:pointer">Destination ↕</th>
-            <th>Origins</th>
             <th onclick="sortRDest('trips')" style="cursor:pointer">Trips ↕</th>
             <th>% Trips</th>
             <th>Est. Sales</th>
@@ -4314,7 +4315,6 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
           <thead><tr>
             <th>#</th>
             <th onclick="setRHDestSort('dest')" style="cursor:pointer">Destination ↕</th>
-            <th>Origins</th>
             <th onclick="setRHDestSort('trips')" style="cursor:pointer">Trips ↕</th>
             <th>% Trips</th>
             <th onclick="setRHDestSort('cost')" style="cursor:pointer">Total Cost ↕</th>
@@ -4353,9 +4353,6 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         </select>
         <select class="form-select" id="rh-trips-company" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
           <option value="">All Companies</option>
-        </select>
-        <select class="form-select" id="rh-trips-origin" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
-          <option value="">All Origins</option>
         </select>
         <select class="form-select" id="rh-trips-dest" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
           <option value="">All Destinations</option>
@@ -4582,7 +4579,7 @@ const SOURCES = {
   salesHist:     API + '?type=hist&origin=' + encodeURIComponent(location.hostname),
   daily:         API + '?type=daily&origin=' + encodeURIComponent(location.hostname),
   prices:        API + '?type=prices&origin=' + encodeURIComponent(location.hostname),
-  fuel:          'https://docs.google.com/spreadsheets/d/1mmDrHwr-_pN-0AcsntRNBUMGjC54781c/export?format=csv&gid=1210512966',
+  fuel:          API + '?type=fuel&origin=' + encodeURIComponent(location.hostname),
   maintenance:   API + '?type=maintenance&origin=' + encodeURIComponent(location.hostname),
   vendorClients: API + '?type=vendor_clients&origin=' + encodeURIComponent(location.hostname),
 };
@@ -4670,20 +4667,11 @@ function csvToObjects(text) {
   const rows = parseCSV(text);
   if (rows.length < 2) return [];
 
-  // Find real header row: first row with 3+ non-empty cells AND contains a date/id-like header
+  // Find real header row: first row with 3+ non-empty cells
   let headerIdx = 0;
   for (let i = 0; i < Math.min(10, rows.length); i++) {
     const filled = rows[i].filter(c => c && c.trim().length > 0).length;
-    if (filled >= 3) {
-      // Check if this looks like a real header row (not a title/subtitle)
-      const rowStr = rows[i].join(',').toLowerCase();
-      const isHeader = rowStr.includes('date') || rowStr.includes('plate') || 
-                       rowStr.includes('company') || rowStr.includes('تاريخ') ||
-                       rowStr.includes('origin') || rowStr.includes('destination') ||
-                       rowStr.includes('رقم') || rowStr.includes('invoice') ||
-                       rowStr.includes('المركبة') || rowStr.includes('فاتورة');
-      if (isHeader) { headerIdx = i; break; }
-    }
+    if (filled >= 3) { headerIdx = i; break; }
   }
 
   const headers = rows[headerIdx].map(h => (h || '').trim());
@@ -4992,7 +4980,7 @@ function plateType(raw) {
   const num = extractDigits(raw||'');
   if (!num) return 'Local Trucks';
   if (TRANSFER_PLATES.some(p => extractDigits(p) === num)) return 'Shuttling Trucks';
-  if (SUPPORT_PLATES.some(p => extractDigits(p) === num)) return 'ZF Employee Vehicles';
+  if (SUPPORT_PLATES.some(p => extractDigits(p) === num && (raw||'').trim().replace(/\s+/g,'').toUpperCase()===p.replace(/\s+/g,'').toUpperCase())) return 'ZF Employee Vehicles';
   return 'Local Trucks';
 }
 
@@ -5116,10 +5104,10 @@ function renderCurrentMonth() {
   // ── Cost Efficiency ──
   const totalLogistics = rentalCost + fuelTr + fuelOn + maintTr + maintOn;
   const effPct = selfShipped ? (totalLogistics/selfShipped*100).toFixed(1) : '—';
-  const effCps = selfShipped ? (totalLogistics/selfShipped*100).toFixed(2) : '—';
+  const effCps = selfShipped ? (totalLogistics/selfShipped).toFixed(4) : '—';
   document.getElementById('eff-total-cost').textContent = fmtShort(totalLogistics);
   document.getElementById('eff-pct').textContent = effPct + '%';
-  document.getElementById('eff-cps').textContent = effCps + ' SAR';
+  document.getElementById('eff-cps').textContent = 'SAR ' + effCps;
 
   // ── All days ──
   const now = new Date();
@@ -5472,7 +5460,8 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         const plate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
         if(supVehData[plate]) supVehData[plate].maint=(supVehData[plate].maint||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
       });
-      const vehRows=Object.entries(supVehData).filter(([,d])=>d.liters>0||d.cost>0||(d.maint||0)>0).map(([plate,d])=>{
+      const vehRows=[];
+      Object.entries(supVehData).filter(([,d])=>d.liters>0||d.cost>0||(d.maint||0)>0).forEach(([plate,d])=>{
         const kml=d.driven>0&&d.liters>0?(d.driven/d.liters).toFixed(2):'—';
         const lkm=d.driven>0&&d.liters>0?(d.liters/d.driven).toFixed(4):'—';
         const sarkm=d.driven>0&&d.cost>0?(d.cost/d.driven).toFixed(3):'—';
@@ -5493,7 +5482,7 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
           <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;font-weight:600">${total>0?fmt(total):'—'}</td>
           <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${sar100}</td>
         </tr>`;
-      }).join('');
+      });
       // Accumulate into grand totals
       Object.values(supVehData).forEach(d=>{
         totLiters+=d.liters||0;
@@ -5787,7 +5776,7 @@ function renderHistMonthlyTable(filtered, totals) {
     const rn = _histInclRental ? m.rental : 0;
     const tc = rn + fu + ma;
     const costPct = m.self?(tc/m.self*100).toFixed(1):'—';
-    const cps = m.self?(tc/m.self*100).toFixed(2):'—';
+    const cps = m.self?(tc/m.self).toFixed(4):'—';
     return `<tr>
       <td style="font-weight:700;color:var(--text)">${getMonthName(m.date)} ${m.date.getFullYear()}</td>
       <td style="color:var(--green)">${m.sales?fmt(m.sales):'—'}</td>
@@ -6218,10 +6207,8 @@ function renderRentalDestAnalysis() {
     const trucks = parseAmount(r['Trucks']||1);
     if (!dest || cost===0) return;
     if (fDest && dest !== fDest) return;
-    const orig = (r['Origin']||'').trim();
-    if (!stats[dest]) stats[dest] = {trips:0, cost:0, origins:new Set()};
+    if (!stats[dest]) stats[dest] = {trips:0, cost:0};
     stats[dest].trips += trucks; stats[dest].cost += cost;
-    if(orig) stats[dest].origins.add(orig);
     totalTrips += trucks;
   });
 
@@ -6244,7 +6231,7 @@ function renderRentalDestAnalysis() {
   const entries = Object.entries(stats).sort(sortFns[_rdestSort]||sortFns.trips);
 
   if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
     tfoot.innerHTML = ''; return;
   }
 
@@ -6258,7 +6245,6 @@ function renderRentalDestAnalysis() {
     return `<tr>
       <td style="color:var(--text3)">${i+1}</td>
       <td style="font-weight:600;color:var(--text)">${dest}</td>
-      <td style="color:var(--text3);font-size:10px">${[...v.origins].join(', ')||'—'}</td>
       <td>${v.trips}</td>
       <td><span class="badge bg">${tripPct}%</span></td>
       <td style="color:var(--green)">${fmt(estSales)}</td>
@@ -6517,7 +6503,7 @@ function renderCompanyAnalysis() {
   const entries=Object.entries(stats).sort((a,b)=>b[1].trips-a[1].trips);
 
   if(!entries.length){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">No trip data</td></tr>';
     tfoot.innerHTML='';
     return;
   }
@@ -8103,18 +8089,6 @@ function renderRentalHist(){
       });
     }
   });
-  // Populate origin filter
-  const origins = new Set();
-  STATE.daily.forEach(r=>{
-    const orig=(r['Origin']||'').trim();
-    if(orig&&isNaN(orig)) origins.add(orig);
-  });
-  const rhOrigSel=document.getElementById('rh-trips-origin');
-  if(rhOrigSel){
-    const prevOrig=rhOrigSel.value;
-    rhOrigSel.innerHTML='<option value="">All Origins</option>';
-    [...origins].sort().forEach(o=>{ rhOrigSel.innerHTML+=`<option value="${o}"${o===prevOrig?' selected':''}>${o}</option>`; });
-  }
   ['rh-company','rh-trips-company'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&el.children.length<=1){
@@ -8273,10 +8247,8 @@ function renderRentalHist(){
     const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
     const trucks=parseAmount(r['Trucks']||r['trucks']||0);
     if(!dest||cost===0) return;
-    const fOrig=(r['Origin']||'').trim();
-    if(!filteredDestStats[dest]) filteredDestStats[dest]={trips:0,cost:0,origins:new Set()};
+    if(!filteredDestStats[dest]) filteredDestStats[dest]={trips:0,cost:0};
     filteredDestStats[dest].trips+=trucks; filteredDestStats[dest].cost+=cost;
-    if(fOrig) filteredDestStats[dest].origins.add(fOrig);
     filteredDestTotal+=cost; filteredTripTotal+=trucks;
   });
 
@@ -8290,7 +8262,6 @@ function renderRentalHist(){
     destTbody.innerHTML=destEntries.map(([dest,v],i)=>`<tr>
       <td style="color:var(--text3)">${i+1}</td>
       <td style="font-weight:600">${dest}</td>
-      <td style="color:var(--text3);font-size:10px">${[...(v.origins||[])].join(', ')||'—'}</td>
       <td>${v.trips}</td>
       <td><span class="badge bg">${filteredTripTotal?(v.trips/filteredTripTotal*100).toFixed(1):0}%</span></td>
       <td style="color:var(--amber)">${fmt(v.cost)}</td>
@@ -8308,7 +8279,6 @@ function renderRentalHist(){
   // Trips log - use dedicated filter IDs
   const tMonth=document.getElementById('rh-trips-month')?.value||'';
   const tComp=document.getElementById('rh-trips-company')?.value||'';
-  const tOrig=document.getElementById('rh-trips-origin')?.value||'';
   const tDest=document.getElementById('rh-trips-dest')?.value||'';
   const tFrom=document.getElementById('rh-trips-from')?.value||'';
   const tTo=document.getElementById('rh-trips-to')?.value||'';
@@ -8330,7 +8300,6 @@ function renderRentalHist(){
       if(tMonth && tMonth!=='' && mk!==tMonth) return false;
       if(tComp && comp!==tComp) return false;
       if(tDest && dest!==tDest) return false;
-      if(tOrig && (r['Origin']||'').trim()!==tOrig) return false;
       if(tFrom && dk<tFrom) return false;
       if(tTo && dk>tTo) return false;
       return true;
@@ -8618,7 +8587,7 @@ function renderMaintTable() {
       <td style="color:var(--green)">${rNext?rNext.toLocaleString():'—'}</td>
       <td>${(r['Workshop']||r['workshop']||'').trim()||'—'}</td>
       <td style="color:var(--text3);font-size:10px">${(r['notes']||r['Notes']||'').trim()||'—'}</td>
-      <td style="color:var(--text3);font-size:10px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${rDesc||''}">${rDesc||'—'}</td>
+      <td style="color:var(--text3);font-size:10px">${rDesc||'—'}</td>
     </tr>`;
   }).join('');
 }
@@ -9027,26 +8996,6 @@ function renderFHVehicleCards() {
   }).join('');
 }
 
-
-function initPriceComparisonSelects() {
-  if (!STATE.prices || !STATE.prices.length) return;
-  
-  // Get origins and destinations from prices sheet
-  const origins = [...new Set(STATE.prices.map(r=>(Object.values(r)[0]||'').trim()).filter(d=>d&&d.length<30&&isNaN(d)))].sort();
-  const dests = [...new Set(STATE.prices.map(r=>(Object.values(r)[1]||'').trim()).filter(d=>d&&d.length<30&&isNaN(d)))].sort();
-  
-  // Get company columns (all columns except Origin and Destination)
-  const companies = [...new Set(STATE.prices.flatMap(r=>Object.keys(r).filter(k=>k&&k!=='Origin'&&k!=='Destination'&&k.trim()&&parseAmount(r[k])>0)))].sort();
-  
-  const origSel = document.getElementById('cmp-origin');
-  const destSel = document.getElementById('cmp-dest');
-  const compSel = document.getElementById('cmp-company');
-  
-  if(origSel) origSel.innerHTML = '<option value="">All Origins</option>' + origins.map(o=>`<option>${o}</option>`).join('');
-  if(destSel) destSel.innerHTML = '<option value="">All Destinations</option>' + dests.map(d=>`<option>${d}</option>`).join('');
-  if(compSel) compSel.innerHTML = '<option value="">All Companies</option>' + companies.map(c=>`<option>${c}</option>`).join('');
-}
-
 function renderAll() {
   renderCurrentMonth();
   renderFleetKPIs();
@@ -9067,7 +9016,6 @@ function renderAll() {
   renderMaintItems();
   renderVC();
   initLogMaintForm();
-  initPriceComparisonSelects();
 
   document.querySelectorAll('.loading-banner').forEach(b => {
     b.className = 'loading-banner ok';
