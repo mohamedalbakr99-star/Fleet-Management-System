@@ -5460,7 +5460,34 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         const plate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
         if(supVehData[plate]) supVehData[plate].maint=(supVehData[plate].maint||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
       });
+      // Build one row per day (aggregated across all vehicles)
+      const dayLiters=Object.values(supVehData).reduce((s,d)=>s+(d.liters||0),0);
+      const dayKm=Object.values(supVehData).reduce((s,d)=>s+(d.driven||0),0);
+      const dayFuel=Object.values(supVehData).reduce((s,d)=>s+(d.cost||0),0);
+      const dayMaint=Object.values(supVehData).reduce((s,d)=>s+(d.maint||0),0);
       const vehRows=[];
+      if(dayLiters>0||dayFuel>0||dayMaint>0){
+        const dkml=dayKm>0&&dayLiters>0?(dayKm/dayLiters).toFixed(2):'—';
+        const dlkm=dayKm>0&&dayLiters>0?(dayLiters/dayKm).toFixed(4):'—';
+        const dsarkm=dayKm>0&&dayFuel>0?(dayFuel/dayKm).toFixed(3):'—';
+        const dmaintKm=dayKm>0&&dayMaint>0?(dayMaint/dayKm).toFixed(3):'—';
+        const dtotal=dayFuel+dayMaint;
+        const dsar100=dayKm>0&&dtotal>0?(dtotal/dayKm*100).toFixed(2):'—';
+        vehRows.push(`<tr>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;color:var(--text2)">${dk.slice(5).replace('-','/')}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;font-weight:600">All ZF Vehicles</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dayKm>0?dayKm.toLocaleString():'—'}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dayLiters>0?Math.round(dayLiters):'—'}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;color:var(--blue)">${dayFuel?fmt(dayFuel):'—'}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;color:var(--green)">${dkml}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dlkm}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dsarkm}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;color:var(--red)">${dayMaint?fmt(dayMaint):'—'}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dmaintKm}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px;font-weight:600">${dtotal>0?fmt(dtotal):'—'}</td>
+          <td style="padding:4px 8px;border-top:1px solid var(--border);font-size:10px">${dsar100}</td>
+        </tr>`);
+      }
       Object.entries(supVehData).filter(([,d])=>d.liters>0||d.cost>0||(d.maint||0)>0).forEach(([plate,d])=>{
         const kml=d.driven>0&&d.liters>0?(d.driven/d.liters).toFixed(2):'—';
         const lkm=d.driven>0&&d.liters>0?(d.liters/d.driven).toFixed(4):'—';
