@@ -4975,12 +4975,16 @@ function extractDigits(s) {
 // ── Fleet classification (global) ──
 const TRANSFER_PLATES = ['RRB 3498','VRB 4654','TSB 2096','GZA 1973'];
 const SUPPORT_PLATES  = ['TSA 5700','TSA 5601','KSB 3325'];
+const LOCAL_OVERRIDE  = ['HSA 3325']; // Forces Local Trucks classification
 
 function plateType(raw) {
+  const norm = (raw||'').trim().replace(/\s+/g,' ');
   const num = extractDigits(raw||'');
   if (!num) return 'Local Trucks';
+  // Check local override first (plates that share digits with support but are Local)
+  if (LOCAL_OVERRIDE.some(p => extractDigits(p) === num)) return 'Local Trucks';
   if (TRANSFER_PLATES.some(p => extractDigits(p) === num)) return 'Shuttling Trucks';
-  if (SUPPORT_PLATES.some(p => extractDigits(p) === num && (raw||'').trim().replace(/\s+/g,'').toUpperCase()===p.replace(/\s+/g,'').toUpperCase())) return 'ZF Employee Vehicles';
+  if (SUPPORT_PLATES.some(p => extractDigits(p) === num)) return 'ZF Employee Vehicles';
   return 'Local Trucks';
 }
 
