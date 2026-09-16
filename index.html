@@ -9131,6 +9131,33 @@ function downloadBackup() {
   URL.revokeObjectURL(url);
 }
 
+
+function filterFHFuelPlate(val) {
+  const sel = document.getElementById('fh-fuel-plate');
+  if (!sel) return;
+  const q = val.trim().toLowerCase();
+  [...sel.options].forEach(opt => {
+    opt.style.display = (!q || opt.value === '' || opt.value === 'ALL' || opt.text.toLowerCase().includes(q)) ? '' : 'none';
+  });
+  if (q.length >= 2) {
+    const firstMatch = [...sel.options].find(opt => opt.style.display !== 'none' && opt.value && opt.value !== 'ALL');
+    if (firstMatch) { sel.value = firstMatch.value; renderFHFuelLog(); }
+  } else if (q.length === 0) { sel.value = ''; renderFHFuelLog(); }
+}
+
+function filterMaintPlate(val) {
+  const sel = document.getElementById('fh-maint-plate');
+  if (!sel) return;
+  const q = val.trim().toLowerCase();
+  [...sel.options].forEach(opt => {
+    opt.style.display = (!q || opt.value === '' || opt.text.toLowerCase().includes(q)) ? '' : 'none';
+  });
+  if (q.length >= 2) {
+    const firstMatch = [...sel.options].find(opt => opt.style.display !== 'none' && opt.value);
+    if (firstMatch) { sel.value = firstMatch.value; renderFleetMaintDetails(); }
+  } else if (q.length === 0) { sel.value = ''; renderFleetMaintDetails(); }
+}
+
 function renderAll() {
   renderCurrentMonth();
   renderFleetKPIs();
