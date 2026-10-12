@@ -5717,8 +5717,8 @@ function renderHistorical() {
     const type = plateType(r['المركبة']||r['Plate']||'');
     if (type !== 'ZF Employee Vehicles') {
       monthly[mk].fuel += parseAmount(r['التكلفة'] || r['Cost']);
-      monthly[mk].fuelLiters += parseAmount(r['الكمية'] || r['Liters'] || r['liters'] || r['كمية (لتر)'] || 0);
-      const km = parseAmount(r['الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['عداد'] || 0);
+      monthly[mk].fuelLiters += parseAmount(r['عدد اللترات'] || r['Liters'] || r['liters'] || r['الكمية'] || r['كمية (لتر)'] || 0);
+      const km = parseAmount(r['عداد الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['الكيلومتر'] || r['عداد'] || 0);
       if (km > 0) monthly[mk]._fuelKmAll.push(km);
     }
   });
