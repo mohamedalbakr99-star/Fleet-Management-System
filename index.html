@@ -5434,11 +5434,32 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
     supTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:10px;font-size:11px">No support vehicle costs recorded</td></tr>';
   } else {
     let tSF=0,tSM=0,tSL=0,tSKM=0;
+    // Build per-plate last-km-by-day index for ZF Employee vehicles (for single-reading days)
+    const _zfLastKm = {}; // plate -> { dk -> lastKm }
+    STATE.fuel.forEach(r=>{
+      const date=parseDate(r['التاريخ']||r['Date']||'');
+      if(!date) return;
+      const type=plateType(r['المركبة']||r['Plate']||'');
+      if(type!=='ZF Employee Vehicles') return;
+      const rNorm=(r['المركبة']||'').trim().replace(/\s+/g,' ');
+      const veh=STATE.fleet.find(v=>{
+        if(v.arPlate) return v.arPlate.replace(/\s+/g,' ').trim()===rNorm;
+        return extractDigits(v.plate)===extractDigits(rNorm);
+      });
+      if(!veh) return;
+      const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
+      if(km<=0) return;
+      const dkk=dateToKey(date);
+      if(!_zfLastKm[veh.plate]) _zfLastKm[veh.plate]={};
+      if(!_zfLastKm[veh.plate][dkk] || km > _zfLastKm[veh.plate][dkk])
+        _zfLastKm[veh.plate][dkk]=km;
+    });
     // Get support fuel data per day
     let totLiters=0,totKm=0,totFuel=0,totMaint=0;
-    supTbody.innerHTML=supDays.map(dk=>{
+    const sortedSupDays=[...supDays].sort();
+    supTbody.innerHTML=sortedSupDays.map((dk,dayIdx)=>{
       const sf=_fuelSupMap[dk]||0, sm=_maintSupMap[dk]||0;
-        // Get per-vehicle fuel data for this day
+      // Get per-vehicle fuel data for this day
       const supVehData={};
       STATE.fleet.filter(v=>plateType(v.plate)==='ZF Employee Vehicles').forEach(v=>{
         supVehData[v.plate]={liters:0,cost:0,_kmReadings:[],driven:0};
@@ -5460,11 +5481,22 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
         if(km>0) supVehData[veh.plate]._kmReadings.push(km);
       });
-      // KM Driven = max - min readings in this day (not vs baseline)
+      // KM Driven per vehicle:
+      // ≥2 readings in day → max - min
+      // 1 reading → today's reading - prev day's last reading
+      // 0 readings → 0
       Object.keys(supVehData).forEach(plate=>{
         const readings=supVehData[plate]._kmReadings;
         if(readings.length>=2){
           supVehData[plate].driven=Math.max(...readings)-Math.min(...readings);
+        } else if(readings.length===1){
+          // Find previous day's last km for this plate
+          const prevDays=sortedSupDays.slice(0,dayIdx).reverse();
+          let prevKm=0;
+          for(const pd of prevDays){
+            if(_zfLastKm[plate]&&_zfLastKm[plate][pd]){prevKm=_zfLastKm[plate][pd];break;}
+          }
+          supVehData[plate].driven=prevKm>0&&readings[0]>prevKm ? readings[0]-prevKm : 0;
         } else {
           supVehData[plate].driven=0;
         }
