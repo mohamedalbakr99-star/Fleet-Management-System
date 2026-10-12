@@ -5435,7 +5435,7 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         // Get per-vehicle fuel data for this day
       const supVehData={};
       STATE.fleet.filter(v=>plateType(v.plate)==='ZF Employee Vehicles').forEach(v=>{
-        supVehData[v.plate]={liters:0,cost:0,km:0,prevKm:0};
+        supVehData[v.plate]={liters:0,cost:0,_kmReadings:[],driven:0};
       });
       STATE.fuel.forEach(r=>{
         const date=parseDate(r['التاريخ']||r['Date']||'');
@@ -5452,12 +5452,16 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         supVehData[veh.plate].liters+=parseAmount(r['عدد اللترات']||r['Liters']);
         supVehData[veh.plate].cost+=parseAmount(r['التكلفة']||r['Cost']);
         const km=parseAmount(r['عداد الكيلومتر']||r['KM']);
-        if(km>supVehData[veh.plate].km) supVehData[veh.plate].km=km;
+        if(km>0) supVehData[veh.plate]._kmReadings.push(km);
       });
-      // Get prev KM for each support vehicle
+      // KM Driven = max - min readings in this day (not vs baseline)
       Object.keys(supVehData).forEach(plate=>{
-        const base=getBaselineKM(plate, supVehData[plate].km)||0;
-        supVehData[plate].driven=supVehData[plate].km>base?supVehData[plate].km-base:0;
+        const readings=supVehData[plate]._kmReadings;
+        if(readings.length>=2){
+          supVehData[plate].driven=Math.max(...readings)-Math.min(...readings);
+        } else {
+          supVehData[plate].driven=0;
+        }
       });
       tSF+=sf; tSM+=sm;
       // Get maintenance for each support vehicle this day
