@@ -1006,6 +1006,12 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
             <button onclick="setHistLineMetric('total')" id="hlt-total" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📊 Total Cost</button>
           </div>
         </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center;margin-right:2px">Fleet:</div>
+          <button onclick="setHistLineFleet('all')" id="hlf-all" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">🚛 All</button>
+          <button onclick="setHistLineFleet('local')" id="hlf-local" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🏠 Local Trucks</button>
+          <button onclick="setHistLineFleet('transfer')" id="hlf-transfer" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔄 Shuttling Trucks</button>
+        </div>
         <div id="hist-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
       </div>
 
@@ -5654,7 +5660,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
     const rev = parseAmount(r['Revenue'] || r[' Revenue ']);
     const code = r['Customer Code '] || r['Customer Code'] || '';
     const name = r['Customer Name '] || r['Customer Name'] || r['Customer'] || '';
@@ -5669,7 +5675,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
     const rev = parseAmount(r[' Revenue '] || r['Revenue']);
     const code = r['Customer Code '] || r['Customer Code'] || '';
     const name = r['Customer Name '] || r['Customer Name'] || '';
@@ -5683,7 +5689,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
     const cost = parseAmount(r['Total Cost (SAR)'] || r['Total Cost'] || r['Cost']);
     const trucks = parseAmount(r['Trucks'] || r['trucks'] || 0);
     // Always create monthly entry even if cost=0 (own trucks)
@@ -5696,13 +5702,13 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
   });
   STATE.maintenance.forEach(r => {
     const date = parseDate(r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
   });
   // Always include current month
   const nowMk = getMonthKey(new Date());
@@ -5713,13 +5719,24 @@ function renderHistorical() {
     const date = parseDate(r['التاريخ'] || r['Date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
     const type = plateType(r['المركبة']||r['Plate']||'');
     if (type !== 'ZF Employee Vehicles') {
-      monthly[mk].fuel += parseAmount(r['التكلفة'] || r['Cost']);
-      monthly[mk].fuelLiters += parseAmount(r['عدد اللترات'] || r['Liters'] || r['liters'] || r['الكمية'] || r['كمية (لتر)'] || 0);
-      const km = parseAmount(r['عداد الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['الكيلومتر'] || r['عداد'] || 0);
+      const fCost = parseAmount(r['التكلفة'] || r['Cost']);
+      const fLit  = parseAmount(r['عدد اللترات'] || r['Liters'] || r['liters'] || r['الكمية'] || r['كمية (لتر)'] || 0);
+      const km    = parseAmount(r['عداد الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['الكيلومتر'] || r['عداد'] || 0);
+      monthly[mk].fuel        += fCost;
+      monthly[mk].fuelLiters  += fLit;
       if (km > 0) monthly[mk]._fuelKmAll.push(km);
+      if (type === 'Local Trucks') {
+        monthly[mk].fuelLocal       += fCost;
+        monthly[mk].fuelLitersLocal += fLit;
+        if (km > 0) monthly[mk]._fuelKmLocal.push(km);
+      } else if (type === 'Shuttling Trucks') {
+        monthly[mk].fuelTransfer       += fCost;
+        monthly[mk].fuelLitersTransfer += fLit;
+        if (km > 0) monthly[mk]._fuelKmTransfer.push(km);
+      }
     }
   });
 
@@ -5728,20 +5745,23 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[]};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
     const type = plateType(r['Plate']||'');
-    if (type !== 'ZF Employee Vehicles') monthly[mk].maint += parseAmount(r['cost'] || r['Amount'] || r['amount']);
+    if (type !== 'ZF Employee Vehicles') {
+      const mCost = parseAmount(r['cost'] || r['Amount'] || r['amount']);
+      monthly[mk].maint += mCost;
+      if (type === 'Local Trucks')      monthly[mk].maintLocal    += mCost;
+      else if (type === 'Shuttling Trucks') monthly[mk].maintTransfer += mCost;
+    }
   });
 
   const allMonths = Object.entries(monthly).sort((a,b) => a[0].localeCompare(b[0]));
   // Compute kmDriven per month = max - min odometer readings
   allMonths.forEach(([mk, m]) => {
-    if (m._fuelKmAll && m._fuelKmAll.length >= 2) {
-      const kmArr = m._fuelKmAll;
-      m.kmDriven = Math.max(...kmArr) - Math.min(...kmArr);
-    } else {
-      m.kmDriven = 0;
-    }
+    const calcKm = arr => arr && arr.length >= 2 ? Math.max(...arr) - Math.min(...arr) : 0;
+    m.kmDriven         = calcKm(m._fuelKmAll);
+    m.kmDrivenLocal    = calcKm(m._fuelKmLocal);
+    m.kmDrivenTransfer = calcKm(m._fuelKmTransfer);
   });
 
   // Populate month selectors
@@ -5810,7 +5830,7 @@ function renderHistorical() {
 
 // ── Historical table state ──
 let _histFleetTab = 'all', _histInclRental = true, _histSort = 'month', _histSortAsc = true;
-let _histLineMetric = 'fuel_cost', _histLineData = [];
+let _histLineMetric = 'fuel_cost', _histLineData = [], _histLineFleet = 'all';
 
 function setHistLineMetric(metric) {
   _histLineMetric = metric;
@@ -5824,6 +5844,17 @@ function setHistLineMetric(metric) {
   renderHistLineChart(metric);
 }
 
+function setHistLineFleet(fleet) {
+  _histLineFleet = fleet;
+  ['all','local','transfer'].forEach(f => {
+    const btn = document.getElementById('hlf-'+f);
+    if(btn) btn.className = f===fleet ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    if(btn) btn.style.fontSize = '10px';
+    if(btn) btn.style.padding = '4px 10px';
+  });
+  renderHistLineChart(_histLineMetric);
+}
+
 function renderHistLineChart(metric) {
   const el = document.getElementById('hist-line-chart');
   if (!el) return;
@@ -5833,14 +5864,25 @@ function renderHistLineChart(metric) {
     return;
   }
 
-  // Metric config
+  // Metric config — fleet-aware
+  const fl = _histLineFleet; // 'all' | 'local' | 'transfer'
   const metricCfg = {
-    fuel_cost: { label: '⛽ Fuel Cost', color: '#f59e0b', unit: 'SAR', fmt: v => fmtShort(v), getter: m => m.fuel },
-    fuel_liters: { label: '🪣 Fuel Liters', color: '#3b82f6', unit: 'L', fmt: v => v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0), getter: m => m.fuelLiters||0 },
-    km: { label: '📍 KM Driven', color: '#8b5cf6', unit: 'KM', fmt: v => v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0), getter: m => m.kmDriven||0 },
-    rental: { label: '🚚 Rental Cost', color: '#ec4899', unit: 'SAR', fmt: v => fmtShort(v), getter: m => m.rental },
-    maint: { label: '🔧 Maintenance', color: '#ef4444', unit: 'SAR', fmt: v => fmtShort(v), getter: m => m.maint },
-    total: { label: '📊 Total Cost', color: '#10b981', unit: 'SAR', fmt: v => fmtShort(v), getter: m => (m.fuel||0)+(m.rental||0)+(m.maint||0) }
+    fuel_cost:   { label: '⛽ Fuel Cost',    color: '#f59e0b', unit: 'SAR', fmt: v => fmtShort(v),
+                   getter: m => fl==='local' ? (m.fuelLocal||0) : fl==='transfer' ? (m.fuelTransfer||0) : (m.fuel||0) },
+    fuel_liters: { label: '🪣 Fuel Liters',  color: '#3b82f6', unit: 'L',   fmt: v => v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0),
+                   getter: m => fl==='local' ? (m.fuelLitersLocal||0) : fl==='transfer' ? (m.fuelLitersTransfer||0) : (m.fuelLiters||0) },
+    km:          { label: '📍 KM Driven',    color: '#8b5cf6', unit: 'KM',  fmt: v => v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0),
+                   getter: m => fl==='local' ? (m.kmDrivenLocal||0) : fl==='transfer' ? (m.kmDrivenTransfer||0) : (m.kmDriven||0) },
+    rental:      { label: '🚚 Rental Cost',  color: '#ec4899', unit: 'SAR', fmt: v => fmtShort(v),
+                   getter: m => m.rental||0 },
+    maint:       { label: '🔧 Maintenance',  color: '#ef4444', unit: 'SAR', fmt: v => fmtShort(v),
+                   getter: m => fl==='local' ? (m.maintLocal||0) : fl==='transfer' ? (m.maintTransfer||0) : (m.maint||0) },
+    total:       { label: '📊 Total Cost',   color: '#10b981', unit: 'SAR', fmt: v => fmtShort(v),
+                   getter: m => {
+                     const fuel  = fl==='local' ? (m.fuelLocal||0) : fl==='transfer' ? (m.fuelTransfer||0) : (m.fuel||0);
+                     const maint = fl==='local' ? (m.maintLocal||0) : fl==='transfer' ? (m.maintTransfer||0) : (m.maint||0);
+                     return fuel + (m.rental||0) + maint;
+                   } }
   };
   const cfg = metricCfg[metric] || metricCfg.fuel_cost;
 
