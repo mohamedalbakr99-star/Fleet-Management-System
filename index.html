@@ -5756,7 +5756,7 @@ function renderHistorical() {
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
     if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
-    const type = plateType(r['Plate']||'');
+    const type = plateType(r['Truck Plate']||r['Plate']||r['plate']||'');
     if (type !== 'ZF Employee Vehicles') {
       const mCost = parseAmount(r['cost'] || r['Amount'] || r['amount']);
       monthly[mk].maint += mCost;
