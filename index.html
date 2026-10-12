@@ -3816,6 +3816,29 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
         </div>
       </div>
 
+      <div class="chart-card" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">📈 Fleet Monthly Trend</div>
+          <div id="fht-line-toggles" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="setFHTMetric('total')" id="fhtm-total" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">📊 Total Cost</button>
+            <button onclick="setFHTMetric('fuel')" id="fhtm-fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">⛽ Fuel Cost</button>
+            <button onclick="setFHTMetric('maint')" id="fhtm-maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔧 Maintenance</button>
+            <button onclick="setFHTMetric('km')" id="fhtm-km" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📍 KM Driven</button>
+            <button onclick="setFHTMetric('kml')" id="fhtm-kml" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📐 KM/L</button>
+            <button onclick="setFHTMetric('avg_fuel')" id="fhtm-avg_fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🚗 Avg Fuel/Veh</button>
+            <button onclick="setFHTMetric('avg_maint')" id="fhtm-avg_maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔩 Avg Maint/Veh</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center;margin-right:2px">Fleet:</div>
+          <button onclick="setFHTFleet('all')" id="fhtf-all" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">🚛 All</button>
+          <button onclick="setFHTFleet('Local Trucks')" id="fhtf-local" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🏠 Local Trucks</button>
+          <button onclick="setFHTFleet('Shuttling Trucks')" id="fhtf-transfer" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔄 Shuttling Trucks</button>
+          <button onclick="setFHTFleet('ZF Employee Vehicles')" id="fhtf-zf" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">👤 ZF Employee</button>
+        </div>
+        <div id="fht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <input type="text" id="fh-search" class="form-input" placeholder="🔍 Search plate..." style="padding:4px 8px;font-size:11px;width:140px" oninput="renderFleetHist()">
         <div style="font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Filter:</div>
@@ -4135,29 +4158,6 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
           </select>
         </div>
         <div id="fh-vehicle-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px"></div>
-      </div>
-
-<div class="chart-card" style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="chart-title" style="margin:0">📈 Fleet Monthly Trend</div>
-          <div id="fht-line-toggles" style="display:flex;gap:6px;flex-wrap:wrap">
-            <button onclick="setFHTMetric('total')" id="fhtm-total" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">📊 Total Cost</button>
-            <button onclick="setFHTMetric('fuel')" id="fhtm-fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">⛽ Fuel Cost</button>
-            <button onclick="setFHTMetric('maint')" id="fhtm-maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔧 Maintenance</button>
-            <button onclick="setFHTMetric('km')" id="fhtm-km" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📍 KM Driven</button>
-            <button onclick="setFHTMetric('kml')" id="fhtm-kml" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📐 KM/L</button>
-            <button onclick="setFHTMetric('avg_fuel')" id="fhtm-avg_fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🚗 Avg Fuel/Veh</button>
-            <button onclick="setFHTMetric('avg_maint')" id="fhtm-avg_maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔩 Avg Maint/Veh</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center;margin-right:2px">Fleet:</div>
-          <button onclick="setFHTFleet('all')" id="fhtf-all" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">🚛 All</button>
-          <button onclick="setFHTFleet('Local Trucks')" id="fhtf-local" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🏠 Local Trucks</button>
-          <button onclick="setFHTFleet('Shuttling Trucks')" id="fhtf-transfer" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔄 Shuttling Trucks</button>
-          <button onclick="setFHTFleet('ZF Employee Vehicles')" id="fhtf-zf" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">👤 ZF Employee</button>
-        </div>
-        <div id="fht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
       </div>
 
       <!-- Fuel Log Historical -->
