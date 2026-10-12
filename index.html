@@ -4138,22 +4138,26 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       </div>
 
 <div class="chart-card" style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div>
-            <div class="chart-title" style="margin-bottom:1px">Monthly Cost per Vehicle</div>
-            <div style="font-size:9px;color:var(--text3)">Line chart of fuel cost across months</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">📈 Fleet Monthly Trend</div>
+          <div id="fht-line-toggles" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="setFHTMetric('total')" id="fhtm-total" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">📊 Total Cost</button>
+            <button onclick="setFHTMetric('fuel')" id="fhtm-fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">⛽ Fuel Cost</button>
+            <button onclick="setFHTMetric('maint')" id="fhtm-maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔧 Maintenance</button>
+            <button onclick="setFHTMetric('km')" id="fhtm-km" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📍 KM Driven</button>
+            <button onclick="setFHTMetric('kml')" id="fhtm-kml" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📐 KM/L</button>
+            <button onclick="setFHTMetric('avg_fuel')" id="fhtm-avg_fuel" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🚗 Avg Fuel/Veh</button>
+            <button onclick="setFHTMetric('avg_maint')" id="fhtm-avg_maint" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔩 Avg Maint/Veh</button>
           </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:9px;color:var(--text3)">FROM</span>
-            <input type="month" id="fh-chart-from" class="form-input" style="padding:3px 6px;font-size:10px" onchange="renderFHChart()">
-            <span style="font-size:9px;color:var(--text3)">TO</span>
-            <input type="month" id="fh-chart-to" class="form-input" style="padding:3px 6px;font-size:10px" onchange="renderFHChart()">
-          </div>
-          <div id="fh-chart-legend" style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:var(--text2);max-width:50%">
-    <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#378ADD;border-radius:1px"></div>Fuel Cost</div>
-    <div style="display:flex;align-items:center;gap:5px"><div style="width:16px;height:2px;background:#e24b4a;border-radius:1px"></div>Maintenance Cost</div></div>
         </div>
-        <svg id="fh-chart" viewBox="0 0 800 280" style="width:100%;height:280px"><line x1="60" y1="240" x2="780" y2="240" stroke="var(--border)" stroke-width="1"></line><line x1="60" y1="20" x2="60" y2="240" stroke="var(--border)" stroke-width="1"></line><line x1="60" y1="20" x2="780" y2="20" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="23" font-size="9" fill="var(--text3)" text-anchor="end">8,776</text><line x1="60" y1="75" x2="780" y2="75" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="78" font-size="9" fill="var(--text3)" text-anchor="end">6,582</text><line x1="60" y1="130" x2="780" y2="130" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="133" font-size="9" fill="var(--text3)" text-anchor="end">4,388</text><line x1="60" y1="185" x2="780" y2="185" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="188" font-size="9" fill="var(--text3)" text-anchor="end">2,194</text><line x1="60" y1="240" x2="780" y2="240" stroke="var(--border)" stroke-width="0.3" opacity="0.4"></line><text x="55" y="243" font-size="9" fill="var(--text3)" text-anchor="end">0</text><text x="60" y="252" font-size="9" fill="var(--text3)" text-anchor="middle">Jun 26</text><polyline points="60,20" fill="none" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="60" cy="20" r="4" fill="#378ADD" stroke="var(--bg2)" stroke-width="1.5"><title>Fuel 2026-06: SAR 8,776</title></circle><polyline points="60,240" fill="none" stroke="#e24b4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center;margin-right:2px">Fleet:</div>
+          <button onclick="setFHTFleet('all')" id="fhtf-all" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">🚛 All</button>
+          <button onclick="setFHTFleet('Local Trucks')" id="fhtf-local" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🏠 Local Trucks</button>
+          <button onclick="setFHTFleet('Shuttling Trucks')" id="fhtf-transfer" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">🔄 Shuttling Trucks</button>
+          <button onclick="setFHTFleet('ZF Employee Vehicles')" id="fhtf-zf" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">👤 ZF Employee</button>
+        </div>
+        <div id="fht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
       </div>
 
       <!-- Fuel Log Historical -->
@@ -7931,6 +7935,123 @@ function renderFleetKPIs() {
 
 // ── Fleet Historical KPI Cards ──
 let _fleetHistKpiTab = 'all';
+let _fhtMetric = 'total', _fhtFleet = 'all';
+
+function setFHTMetric(metric) {
+  _fhtMetric = metric;
+  ['total','fuel','maint','km','kml','avg_fuel','avg_maint'].forEach(m => {
+    const b = document.getElementById('fhtm-'+m);
+    if(b){b.className=m===metric?'btn btn-primary btn-sm':'btn btn-ghost btn-sm';b.style.fontSize='10px';b.style.padding='4px 10px';}
+  });
+  renderFHTLineChart();
+}
+
+function setFHTFleet(fleet) {
+  _fhtFleet = fleet;
+  const map={'all':'all','Local Trucks':'local','Shuttling Trucks':'transfer','ZF Employee Vehicles':'zf'};
+  ['all','local','transfer','zf'].forEach(f=>{
+    const b=document.getElementById('fhtf-'+f);
+    if(b){b.className=map[fleet]===f?'btn btn-primary btn-sm':'btn btn-ghost btn-sm';b.style.fontSize='10px';b.style.padding='4px 10px';}
+  });
+  renderFHTLineChart();
+}
+
+function renderFHTLineChart() {
+  const el=document.getElementById('fht-line-chart');
+  if(!el) return;
+  const monthData={};
+  STATE.fleet.forEach(v=>{
+    const type=plateType(v.plate);
+    if(_fhtFleet!=='all'&&type!==_fhtFleet) return;
+    const vFuel={};
+    STATE.fuel.forEach(r=>{
+      const date=parseDate(r['\u0627\u0644\u062a\u0627\u0631\u064a\u062e']||r['Date']||'');
+      if(!date) return;
+      const rP=(r['\u0627\u0644\u0645\u0631\u0643\u0628\u0629']||r['Plate']||'').trim();
+      const rN=rP.replace(/\s+/g,' ').trim(),rNum=extractDigits(rP);
+      let match=false;
+      if(v.arPlate){match=v.arPlate.replace(/\s+/g,' ').trim()===rN;}
+      else{
+        const fm=STATE.fleet.filter(v2=>extractDigits(v2.plate)===rNum);
+        if(fm.length===1)match=fm[0].plate===v.plate;
+        else if(fm.length>1){const am=fm.find(v2=>v2.arPlate&&v2.arPlate.replace(/\s+/g,' ').trim()===rN);match=am?am.plate===v.plate:fm[0].plate===v.plate;}
+        else{const pm=STATE.fleet.filter(v2=>{const vn=extractDigits(v2.plate);return vn&&(rNum.endsWith(vn.slice(-4))||vn.endsWith(rNum.slice(-4)));});if(pm.length===1)match=pm[0].plate===v.plate;}
+      }
+      if(!match) return;
+      const mk=getMonthKey(date);
+      if(!vFuel[mk])vFuel[mk]={fuel:0,liters:0,lastKm:0,firstKm:0};
+      vFuel[mk].fuel+=parseAmount(r['\u0627\u0644\u062a\u0643\u0644\u0641\u0629']||r['Cost']);
+      vFuel[mk].liters+=parseAmount(r['\u0639\u062f\u062f \u0627\u0644\u0644\u062a\u0631\u0627\u062a']||r['Liters']);
+      const km=parseAmount(r['\u0639\u062f\u0627\u062f \u0627\u0644\u0643\u064a\u0644\u0648\u0645\u062a\u0631']||r['KM']);
+      if(km>vFuel[mk].lastKm)vFuel[mk].lastKm=km;
+      if(km>0&&(vFuel[mk].firstKm===0||km<vFuel[mk].firstKm))vFuel[mk].firstKm=km;
+    });
+    const vMaint={};
+    STATE.maintenance.forEach(r=>{
+      const date=parseDate(r['Date']||r['date']);
+      if(!date)return;
+      if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()!==v.plate)return;
+      const mk=getMonthKey(date);
+      if(!vMaint[mk])vMaint[mk]=0;
+      vMaint[mk]+=parseAmount(r['cost']||r['Amount']||r['amount']||0);
+    });
+    const allMks=new Set([...Object.keys(vFuel),...Object.keys(vMaint)]);
+    allMks.forEach(mk=>{
+      if(!monthData[mk])monthData[mk]={fuel:0,maint:0,liters:0,km:0,vehCount:0};
+      const fd=vFuel[mk]||{fuel:0,liters:0,lastKm:0,firstKm:0};
+      const kmd=fd.lastKm>0&&fd.firstKm>0&&fd.lastKm>fd.firstKm?fd.lastKm-fd.firstKm:0;
+      monthData[mk].fuel+=fd.fuel;
+      monthData[mk].liters+=fd.liters;
+      monthData[mk].km+=kmd;
+      monthData[mk].maint+=vMaint[mk]||0;
+      monthData[mk].vehCount++;
+    });
+  });
+  const sorted=Object.entries(monthData).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(!sorted.length){el.innerHTML='<div style="color:var(--text3);font-size:11px;text-align:center;padding:40px 0">No data available</div>';return;}
+  const metricCfg={
+    total:    {label:'\ud83d\udcca Total Cost',    color:'#10b981',unit:'SAR',fmt:v=>fmtShort(v),getter:m=>(m.fuel||0)+(m.maint||0)},
+    fuel:     {label:'\u26fd Fuel Cost',            color:'#f59e0b',unit:'SAR',fmt:v=>fmtShort(v),getter:m=>m.fuel||0},
+    maint:    {label:'\ud83d\udd27 Maintenance',   color:'#ef4444',unit:'SAR',fmt:v=>fmtShort(v),getter:m=>m.maint||0},
+    km:       {label:'\ud83d\udccd KM Driven',     color:'#8b5cf6',unit:'KM', fmt:v=>v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0),getter:m=>m.km||0},
+    kml:      {label:'\ud83d\udcd0 KM/L',          color:'#3b82f6',unit:'KM/L',fmt:v=>v.toFixed(2),getter:m=>m.km>0&&m.liters>0?m.km/m.liters:0},
+    avg_fuel: {label:'\ud83d\ude97 Avg Fuel/Veh',  color:'#f59e0b',unit:'SAR',fmt:v=>fmtShort(v),getter:m=>m.vehCount>0?m.fuel/m.vehCount:0},
+    avg_maint:{label:'\ud83d\udd29 Avg Maint/Veh', color:'#ef4444',unit:'SAR',fmt:v=>fmtShort(v),getter:m=>m.vehCount>0?m.maint/m.vehCount:0},
+  };
+  const cfg=metricCfg[_fhtMetric]||metricCfg.total;
+  const points=sorted.map(([mk,m])=>({label:getMonthName(new Date(mk+'-01')),value:cfg.getter(m)}));
+  const n=points.length,W=560,H=180,padL=54,padR=18,padT=22,padB=38;
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const vals=points.map(p=>p.value);
+  const maxV=Math.max(...vals,1),minV=Math.min(...vals,0),range=maxV-minV||1;
+  let gridLines='',yLabels='';
+  for(let i=0;i<=4;i++){
+    const yVal=minV+(range*i/4),yPx=padT+chartH-(chartH*i/4);
+    gridLines+=`<line x1="${padL}" y1="${yPx}" x2="${W-padR}" y2="${yPx}" stroke="#e2e8f0" stroke-width="0.8" stroke-dasharray="${i===0?'none':'4,3'}"/>`;
+    yLabels+=`<text x="${padL-6}" y="${yPx+4}" font-size="9" fill="#94a3b8" text-anchor="end">${cfg.fmt(yVal)}</text>`;
+  }
+  const xPos=n===1?[padL+chartW/2]:points.map((_,i)=>padL+(i/(n-1))*chartW);
+  const yPos=vals.map(v=>padT+chartH-((v-minV)/range)*chartH);
+  const gradId='fhtg_'+_fhtMetric;
+  let smoothLine='',areaSmoothD='';
+  if(n===1){smoothLine=`<circle cx="${xPos[0]}" cy="${yPos[0]}" r="5" fill="${cfg.color}"/>`;}
+  else{
+    let d=`M${xPos[0].toFixed(1)},${yPos[0].toFixed(1)}`,d2=`M${xPos[0].toFixed(1)},${yPos[0].toFixed(1)}`;
+    for(let i=1;i<n;i++){const cpx=(xPos[i-1]+xPos[i])/2;d+=` C${cpx.toFixed(1)},${yPos[i-1].toFixed(1)} ${cpx.toFixed(1)},${yPos[i].toFixed(1)} ${xPos[i].toFixed(1)},${yPos[i].toFixed(1)}`;d2+=` C${cpx.toFixed(1)},${yPos[i-1].toFixed(1)} ${cpx.toFixed(1)},${yPos[i].toFixed(1)} ${xPos[i].toFixed(1)},${yPos[i].toFixed(1)}`;}
+    d2+=` L${xPos[n-1].toFixed(1)},${(padT+chartH).toFixed(1)} L${xPos[0].toFixed(1)},${(padT+chartH).toFixed(1)} Z`;
+    smoothLine=`<path d="${d}" fill="none" stroke="${cfg.color}" stroke-width="2.5" stroke-linecap="round"/>`;
+    areaSmoothD=`<path d="${d2}" fill="url(#${gradId})" opacity="0.25"/>`;
+  }
+  let circles='';
+  points.forEach((p,i)=>{
+    circles+=`<circle cx="${xPos[i].toFixed(1)}" cy="${yPos[i].toFixed(1)}" r="4.5" fill="${cfg.color}" stroke="white" stroke-width="1.5" style="cursor:pointer"><title>${p.label}: ${cfg.fmt(p.value)} ${cfg.unit}</title></circle>`;
+    if(n<=8){const ly=yPos[i]-9;circles+=`<text x="${xPos[i].toFixed(1)}" y="${ly<padT+4?yPos[i]+16:ly}" font-size="8.5" fill="${cfg.color}" font-weight="600" text-anchor="middle">${cfg.fmt(p.value)}</text>`;}
+  });
+  let xLabels='';
+  points.forEach((p,i)=>{if(!(n>12&&i%2!==0))xLabels+=`<text x="${xPos[i].toFixed(1)}" y="${H-8}" font-size="9" fill="#94a3b8" text-anchor="middle">${p.label}</text>`;});
+  const titleLabel=`<text x="${W/2}" y="${padT-6}" font-size="10" fill="#64748b" text-anchor="middle" font-weight="500">${cfg.label}</text>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:200px;display:block"><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${cfg.color}" stop-opacity="0.7"/><stop offset="100%" stop-color="${cfg.color}" stop-opacity="0.02"/></linearGradient></defs>${titleLabel}${gridLines}${yLabels}<line x1="${padL}" y1="${padT+chartH}" x2="${W-padR}" y2="${padT+chartH}" stroke="#cbd5e1" stroke-width="1"/><line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="#e2e8f0" stroke-width="0.8"/>${areaSmoothD}${smoothLine}${circles}${xLabels}</svg>`;
+}
 
 function setFleetHistKpiTab(tab) {
   _fleetHistKpiTab = tab;
@@ -7940,6 +8061,7 @@ function setFleetHistKpiTab(tab) {
     if(btn) btn.className=t===tab?'btn btn-primary btn-sm':'btn btn-ghost btn-sm';
   });
   renderFleetHistKPIs();
+  renderFHTLineChart();
 }
 
 function renderFleetHistKPIs() {
