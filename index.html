@@ -5660,7 +5660,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
     const rev = parseAmount(r['Revenue'] || r[' Revenue ']);
     const code = r['Customer Code '] || r['Customer Code'] || '';
     const name = r['Customer Name '] || r['Customer Name'] || r['Customer'] || '';
@@ -5675,7 +5675,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
     const rev = parseAmount(r[' Revenue '] || r['Revenue']);
     const code = r['Customer Code '] || r['Customer Code'] || '';
     const name = r['Customer Name '] || r['Customer Name'] || '';
@@ -5689,7 +5689,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
     const cost = parseAmount(r['Total Cost (SAR)'] || r['Total Cost'] || r['Cost']);
     const trucks = parseAmount(r['Trucks'] || r['trucks'] || 0);
     // Always create monthly entry even if cost=0 (own trucks)
@@ -5702,13 +5702,13 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
   });
   STATE.maintenance.forEach(r => {
     const date = parseDate(r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
   });
   // Always include current month
   const nowMk = getMonthKey(new Date());
@@ -5719,7 +5719,7 @@ function renderHistorical() {
     const date = parseDate(r['التاريخ'] || r['Date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
     const type = plateType(r['المركبة']||r['Plate']||'');
     if (type !== 'ZF Employee Vehicles') {
       const fCost = parseAmount(r['التكلفة'] || r['Cost']);
@@ -5727,15 +5727,25 @@ function renderHistorical() {
       const km    = parseAmount(r['عداد الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['الكيلومتر'] || r['عداد'] || 0);
       monthly[mk].fuel        += fCost;
       monthly[mk].fuelLiters  += fLit;
-      if (km > 0) monthly[mk]._fuelKmAll.push(km);
+      const plate = (r['المركبة']||r['Plate']||'').toString().trim();
+      if (km > 0) {
+        if (!monthly[mk]._kmByPlate[plate]) monthly[mk]._kmByPlate[plate] = [];
+        monthly[mk]._kmByPlate[plate].push(km);
+      }
       if (type === 'Local Trucks') {
         monthly[mk].fuelLocal       += fCost;
         monthly[mk].fuelLitersLocal += fLit;
-        if (km > 0) monthly[mk]._fuelKmLocal.push(km);
+        if (km > 0) {
+          if (!monthly[mk]._kmByPlateLocal[plate]) monthly[mk]._kmByPlateLocal[plate] = [];
+          monthly[mk]._kmByPlateLocal[plate].push(km);
+        }
       } else if (type === 'Shuttling Trucks') {
         monthly[mk].fuelTransfer       += fCost;
         monthly[mk].fuelLitersTransfer += fLit;
-        if (km > 0) monthly[mk]._fuelKmTransfer.push(km);
+        if (km > 0) {
+          if (!monthly[mk]._kmByPlateTransfer[plate]) monthly[mk]._kmByPlateTransfer[plate] = [];
+          monthly[mk]._kmByPlateTransfer[plate].push(km);
+        }
       }
     }
   });
@@ -5745,7 +5755,7 @@ function renderHistorical() {
     const date = parseDate(r['Date '] || r['Date'] || r['date']);
     if (!date || isNaN(date)) return;
     const mk = getMonthKey(date);
-    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _fuelKmAll:[], fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, _fuelKmLocal:[], _fuelKmTransfer:[], maintLocal:0, maintTransfer:0};
+    if (!monthly[mk]) monthly[mk] = {date, sales:0, vendor:0, self:0, rental:0, trips:0, fuel:0, maint:0, fuelLiters:0, _kmByPlate:{}, _kmByPlateLocal:{}, _kmByPlateTransfer:{}, fuelLocal:0, fuelTransfer:0, fuelLitersLocal:0, fuelLitersTransfer:0, maintLocal:0, maintTransfer:0};
     const type = plateType(r['Plate']||'');
     if (type !== 'ZF Employee Vehicles') {
       const mCost = parseAmount(r['cost'] || r['Amount'] || r['amount']);
@@ -5756,12 +5766,15 @@ function renderHistorical() {
   });
 
   const allMonths = Object.entries(monthly).sort((a,b) => a[0].localeCompare(b[0]));
-  // Compute kmDriven per month = max - min odometer readings
+  // Compute kmDriven per month = sum of (max - min) per plate
+  const sumKmByPlate = obj => Object.values(obj).reduce((sum, readings) => {
+    if (readings.length >= 2) return sum + Math.max(...readings) - Math.min(...readings);
+    return sum;
+  }, 0);
   allMonths.forEach(([mk, m]) => {
-    const calcKm = arr => arr && arr.length >= 2 ? Math.max(...arr) - Math.min(...arr) : 0;
-    m.kmDriven         = calcKm(m._fuelKmAll);
-    m.kmDrivenLocal    = calcKm(m._fuelKmLocal);
-    m.kmDrivenTransfer = calcKm(m._fuelKmTransfer);
+    m.kmDriven         = sumKmByPlate(m._kmByPlate);
+    m.kmDrivenLocal    = sumKmByPlate(m._kmByPlateLocal);
+    m.kmDrivenTransfer = sumKmByPlate(m._kmByPlateTransfer);
   });
 
   // Populate month selectors
