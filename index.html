@@ -5054,7 +5054,8 @@ function renderCurrentMonth() {
   document.getElementById('kpi-vendor').textContent = fmtShort(vendorShipped);
   document.getElementById('kpi-self-sub').textContent = selfPct + '% of total sales';
   document.getElementById('kpi-vendor-sub').textContent = vendPct + '% · ' + STATE.vendorClients.length + ' customers';
-  document.getElementById('kpi-total-sub').textContent = Object.keys(dailySalesMap).length + ' days · June 2026';
+  const _now=new Date(); const _monthName=_now.toLocaleString('en-US',{month:'long'}); const _year=_now.getFullYear();
+  document.getElementById('kpi-total-sub').textContent = Object.keys(dailySalesMap).length + ' days · ' + _monthName + ' ' + _year;
   document.getElementById('bar-self').style.width = selfPct + '%';
   document.getElementById('bar-vendor').style.width = vendPct + '%';
 
