@@ -9600,31 +9600,44 @@ function renderFHVehicleCards() {
 
 
 function downloadBackup() {
+  const pw = prompt('🔒 Enter download password:');
+  if (!pw) return;
+  if (pw !== 'ZFI2026') { alert('❌ Incorrect password'); return; }
+
   const now = new Date();
   const dateStr = now.toISOString().slice(0,10);
   const timeStr = now.toTimeString().slice(0,5).replace(':','-');
-  const filename = `ZFI_FMS_Backup_${dateStr}_${timeStr}.json`;
-  
-  const backup = {
+  const filename = `ZFI_FMS_Backup_${dateStr}_${timeStr}.html`;
+
+  // Snapshot current STATE data
+  const snapshot = {
     exported_at: now.toISOString(),
-    version: '1.0',
-    data: {
-      fuel: STATE.fuel,
-      maintenance: STATE.maintenance,
-      daily: STATE.daily,
-      fleet: STATE.fleet,
-      prices: STATE.prices,
-      sales: Array.isArray(STATE.sales) ? STATE.sales : (STATE.sales?.data || []),
-      salesHist: Array.isArray(STATE.salesHist) ? STATE.salesHist : (STATE.salesHist?.data || [])
-    }
+    fuel: STATE.fuel,
+    maintenance: STATE.maintenance,
+    daily: STATE.daily,
+    fleet: STATE.fleet,
+    prices: STATE.prices,
+    sales: Array.isArray(STATE.sales) ? STATE.sales : (STATE.sales?.data || []),
+    salesHist: Array.isArray(STATE.salesHist) ? STATE.salesHist : (STATE.salesHist?.data || [])
   };
-  
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+
+  // Inject snapshot into page HTML so it loads offline without Google Sheets
+  const injectScript = `<script id="__zfi_backup_data__">
+window.__ZFI_BACKUP__ = ${JSON.stringify(snapshot)};
+<\/script>`;
+
+  // Insert just before </head>
+  let html = document.documentElement.outerHTML;
+  html = html.replace('</head>', injectScript + '</head>');
+
+  const blob = new Blob([html], {type: 'text/html'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
@@ -9972,7 +9985,24 @@ function exportFleetMaint() {
 // Boot
 (async function() {
   console.log('🚀 Zamil FMS — Loading data...');
-  await loadAllData();
+
+  // If a backup snapshot is embedded, use it directly (offline / GitHub Pages fallback)
+  if (window.__ZFI_BACKUP__) {
+    console.log('📦 Backup snapshot detected — loading embedded data');
+    const b = window.__ZFI_BACKUP__;
+    STATE.fuel        = b.fuel        || [];
+    STATE.maintenance = b.maintenance || [];
+    STATE.daily       = b.daily       || [];
+    STATE.fleet       = b.fleet       || DEFAULT_FLEET;
+    STATE.prices      = b.prices      || [];
+    STATE.sales       = b.sales       || [];
+    STATE.salesHist   = b.salesHist   || [];
+    const refreshEl = document.getElementById('last-refresh-time');
+    if (refreshEl) refreshEl.textContent = '📦 ' + (b.exported_at ? b.exported_at.slice(0,16).replace('T',' ') : 'backup');
+  } else {
+    await loadAllData();
+  }
+
   renderAll();
 })();
 </script>
