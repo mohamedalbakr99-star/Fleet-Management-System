@@ -4253,6 +4253,29 @@ tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
       </div>
       <div style="display:none"><span id="rh-top-co"></span><span id="rh-top-co-sub"></span></div>
 
+      <!-- Rental Monthly Trend Chart -->
+      <div class="chart-card" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">📈 Rental Monthly Trend</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="setRHTMetric('trips')" id="rhtm-trips" class="btn btn-primary btn-sm" style="font-size:10px;padding:4px 10px">🚚 Trips</button>
+            <button onclick="setRHTMetric('avg')" id="rhtm-avg" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">📊 Avg Trip Cost</button>
+            <button onclick="setRHTMetric('cost')" id="rhtm-cost" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">💰 Total Cost</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center">Company:</div>
+          <select class="form-select" id="rht-company" onchange="renderRHTLineChart()" style="padding:4px 8px;font-size:11px">
+            <option value="">All Companies</option>
+          </select>
+          <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;align-self:center;margin-left:6px">Destination:</div>
+          <select class="form-select" id="rht-dest" onchange="renderRHTLineChart()" style="padding:4px 8px;font-size:11px">
+            <option value="">All Destinations</option>
+          </select>
+        </div>
+        <div id="rht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
+      </div>
+
       <!-- Company Analysis -->
       <div class="sec-title">Company Analysis — Historical</div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -7936,6 +7959,148 @@ function renderFleetKPIs() {
 // ── Fleet Historical KPI Cards ──
 let _fleetHistKpiTab = 'all';
 let _fhtMetric = 'total', _fhtFleet = 'all';
+let _rhtMetric = 'trips';
+
+function setRHTMetric(metric) {
+  _rhtMetric = metric;
+  ['trips','avg','cost'].forEach(m => {
+    const btn = document.getElementById('rhtm-'+m);
+    if(btn) btn.className = 'btn btn-sm ' + (m===metric?'btn-primary':'btn-ghost');
+    if(btn) btn.style.cssText = 'font-size:10px;padding:4px 10px';
+  });
+  renderRHTLineChart();
+}
+
+function renderRHTLineChart() {
+  const fComp = (document.getElementById('rht-company')?.value||'').trim();
+  const fDest  = (document.getElementById('rht-dest')?.value||'').trim();
+
+  // Populate selects from STATE.daily if not yet populated
+  const compSel = document.getElementById('rht-company');
+  const destSel  = document.getElementById('rht-dest');
+  if(compSel && compSel.children.length <= 1) {
+    const cos = new Set();
+    STATE.daily.forEach(r=>{ const c=(r['Company']||'').trim(); if(c) cos.add(c); });
+    [...cos].sort().forEach(c=>{ compSel.innerHTML+=`<option value="${c}">${c}</option>`; });
+  }
+  if(destSel && destSel.children.length <= 1) {
+    const ds = new Set();
+    STATE.daily.forEach(r=>{ const d=(r['Destination']||'').trim(); if(d) ds.add(d); });
+    [...ds].sort().forEach(d=>{ destSel.innerHTML+=`<option value="${d}">${d}</option>`; });
+  }
+
+  // Build monthly buckets — same logic as renderRentalHist KPIs
+  const monthly = {};
+  STATE.daily.forEach(r => {
+    const date = parseDate(r['Date']||r['date']);
+    if(!date||isNaN(date)) return;
+    const dest = (r['Destination']||'').trim();
+    const comp = (r['Company']||'').trim();
+    const cost = parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
+    const trucks = parseAmount(r['Trucks']||1);
+    if(!dest||cost===0) return;
+    if(fComp && comp!==fComp) return;
+    if(fDest && dest!==fDest) return;
+    const mk = getMonthKey(date);
+    if(!monthly[mk]) monthly[mk] = {trips:0, cost:0};
+    monthly[mk].trips += trucks;
+    monthly[mk].cost  += cost;
+  });
+
+  const keys = Object.keys(monthly).sort();
+  if(!keys.length) {
+    document.getElementById('rht-line-chart').innerHTML =
+      '<div style="text-align:center;color:var(--text3);padding:30px;font-size:12px">No data</div>';
+    return;
+  }
+
+  const labels = keys.map(mk => {
+    const d = new Date(mk+'-15T12:00:00Z');
+    return d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+  });
+
+  const metric = _rhtMetric;
+  const values = keys.map(mk => {
+    const m = monthly[mk];
+    if(metric==='trips') return m.trips;
+    if(metric==='avg')   return m.trips ? m.cost/m.trips : 0;
+    if(metric==='cost')  return m.cost;
+    return 0;
+  });
+
+  const metricLabel = metric==='trips'?'Trips':metric==='avg'?'Avg Trip Cost (SAR)':'Total Cost (SAR)';
+  const color = metric==='trips'?'#378ADD':metric==='avg'?'#f0a020':'#1db97a';
+  const colorStop = metric==='trips'?'rgba(55,138,221,0.15)':metric==='avg'?'rgba(240,160,32,0.15)':'rgba(29,185,122,0.15)';
+
+  const W=700, H=200, PL=54, PR=16, PT=16, PB=36;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const n=values.length;
+  const maxV=Math.max(...values,1);
+  const minV=0;
+  const range=maxV-minV||1;
+
+  const xOf=i=>(n===1?cW/2:(i/(n-1)*cW))+PL;
+  const yOf=v=>PT+cH*(1-(v-minV)/range);
+
+  // Points
+  const pts=values.map((v,i)=>({x:xOf(i),y:yOf(v),v}));
+
+  // Smooth bezier path
+  let path='';
+  pts.forEach((p,i)=>{
+    if(i===0){path+=`M${p.x},${p.y}`;return;}
+    const prev=pts[i-1];
+    const cx=(p.x+prev.x)/2;
+    path+=` C${cx},${prev.y} ${cx},${p.y} ${p.x},${p.y}`;
+  });
+
+  // Area path
+  const area=path+` L${pts[pts.length-1].x},${PT+cH} L${pts[0].x},${PT+cH} Z`;
+
+  // Y axis labels
+  const ticks=5;
+  let yLabels='';
+  for(let t=0;t<=ticks;t++){
+    const v=minV+(range*t/ticks);
+    const y=yOf(v);
+    const lbl=metric==='trips'?Math.round(v).toLocaleString():fmtShort(v);
+    yLabels+=`<text x="${PL-4}" y="${y+3}" font-size="8" fill="var(--text3)" text-anchor="end">${lbl}</text>
+    <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" opacity="0.5"/>`;
+  }
+
+  // X axis labels
+  let xLabels='';
+  const step=Math.ceil(n/8);
+  pts.forEach((p,i)=>{
+    if(i%step===0||i===n-1)
+      xLabels+=`<text x="${p.x}" y="${H-4}" font-size="8" fill="var(--text3)" text-anchor="middle">${labels[i]}</text>`;
+  });
+
+  // Dots + tooltips
+  let dots='';
+  pts.forEach((p,i)=>{
+    const lbl=metric==='trips'?p.v.toLocaleString():fmt(p.v);
+    dots+=`<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="var(--bg)" stroke-width="1.5"><title>${labels[i]}: ${lbl}</title></circle>`;
+  });
+
+  const uid='rht'+Date.now();
+  const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-height:220px;display:block" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${yLabels}
+    <path d="${area}" fill="url(#${uid})"/>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    ${xLabels}
+    <text x="${PL}" y="${PT-4}" font-size="8" fill="var(--text3)">${metricLabel}</text>
+  </svg>`;
+
+  document.getElementById('rht-line-chart').innerHTML = svg;
+}
 
 function setFHTMetric(metric) {
   _fhtMetric = metric;
@@ -9501,6 +9666,7 @@ function renderAll() {
   renderFHChart();
   renderFHFuelLog();
   renderRentalHist();
+  renderRHTLineChart();
   renderHistorical();
   renderRental();
   renderFleetGrid();
