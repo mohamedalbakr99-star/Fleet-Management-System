@@ -9333,11 +9333,10 @@ function filterFuelPlate(val) {
 
 
 function renderFleetMaintDetails(){
-  const tbody=document.getElementById('fleet-maint-tbody');
-  const tfoot=document.getElementById('fleet-maint-totals');
-  const fType=document.getElementById('fh-maint-type')?.value||'';
-  const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
-
+  const plate=document.getElementById('fh-maint-plate')?.value||'';
+  const item=document.getElementById('fh-maint-item')?.value||'';
+  const month=document.getElementById('fh-maint-month')?.value||'';
+  
   // Populate month selector once
   const monSel = document.getElementById('fh-maint-month');
   if(monSel && monSel.children.length <= 1) {
@@ -9354,10 +9353,13 @@ function renderFleetMaintDetails(){
       monSel.innerHTML += '<option value="'+mk+'">'+label+'</option>';
     });
   }
-  const month=document.getElementById('fh-maint-month')?.value||'';
+  const tbody=document.getElementById('fleet-maint-tbody');
+  const tfoot=document.getElementById('fleet-maint-totals');
+
+  const search=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+  const fType=document.getElementById('fh-maint-type')?.value||'';
 
   // Filter plate dropdown based on selected type
-  const plate=document.getElementById('fh-maint-plate')?.value||'';
   const plateSel=document.getElementById('fh-maint-plate');
   if(plateSel){
     // Ensure all plates from maintenance data are in dropdown
@@ -9390,7 +9392,7 @@ function renderFleetMaintDetails(){
     STATE.maintenance.forEach(r=>{
       const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
       if(fType&&plateType(rp)!==fType) return;
-      if(plateEff&&rp!==plateEff) return;
+      if(plate&&rp!==plate) return;
       const it=(r['Category']||r['Item']||r['item']||'').trim();
       if(it) items.add(it);
     });
@@ -9398,14 +9400,13 @@ function renderFleetMaintDetails(){
     itemSel.innerHTML='<option value="">— Select Category —</option>';
     [...items].sort().forEach(it=>{ itemSel.innerHTML+=`<option value="${it}"${it===prevItem?' selected':''}>${it}</option>`; });
   }
-  // Re-read item after dropdown rebuild
-  const item=document.getElementById('fh-maint-item')?.value||'';
-
-  if(!plateEff&&!item&&!fType&&!month&&!fhSearch){
-    if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';
-    if(tfoot)tfoot.innerHTML='';
+  if(false){
+    tbody.innerHTML=''; tfoot.innerHTML='';
     return;
   }
+
+  const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+  if(!plateEff&&!item&&!fType&&!month&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
   const rows=STATE.maintenance.filter(r=>{
     const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
     const rItem=(r['Category']||r['Item']||r['item']||'').trim();
@@ -9413,7 +9414,7 @@ function renderFleetMaintDetails(){
     if(plateEff && rPlate!==plateEff) return false;
     if(item && rItem!==item) return false;
     if(fType && rType!==fType) return false;
-    if(fhSearch && !rPlate.toLowerCase().includes(fhSearch) && !rItem.toLowerCase().includes(fhSearch)) return false;
+    if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
     const dkRaw=r['Date']||'';
     const dkDate = dkRaw ? new Date(dkRaw) : null;
     const rMk = dkDate && !isNaN(dkDate) ? dkDate.getFullYear()+'-'+String(dkDate.getMonth()+1).padStart(2,'0') : '';
@@ -9428,7 +9429,7 @@ function renderFleetMaintDetails(){
 
   let total=0;
   tbody.innerHTML=rows.map(r=>{
-    const amt=parseAmount(r['cost']||r['Amount']||r['amount']||r['Cost']);
+    const amt=parseAmount(r['cost']||r['Amount']||r['amount']);
     total+=amt;
     const fPlate2=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
     const fItem2=(r['Category']||r['Item']||r['item']||'').trim();
@@ -9437,26 +9438,22 @@ function renderFleetMaintDetails(){
     const fNext2=parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||r['Next_KM']||0);
     const fType2=plateType(fPlate2);
     const fBadge2={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'}[fType2]||'bg';
-    const fInv=(r['invoice no']||r['Invoice No']||r['Invoice']||r['invoice']||'').trim();
-    const fWorkshop=(r['Workshop']||r['workshop']||'').trim();
-    const fNotes=(r['notes']||r['Notes']||'').trim();
-    const fDesc=(r['Description']||r['description']||r['desc']||'').trim();
-    const fNoteFull=[fNotes,fDesc].filter(Boolean).join(' | ');
     return `<tr>
       <td>${fDate2}</td>
       <td style="font-weight:600">${fPlate2||'—'}</td>
+      <td><span class="badge ${fBadge2}" style="font-size:8px">${fType2}</span></td>
       <td>${fItem2||'—'}</td>
-      <td>${fInv||'—'}</td>
-      <td style="color:var(--amber);font-weight:600">${amt?amt.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}):'—'}</td>
+      <td>${r['invoice no']||r['Invoice No']||'—'}</td>
+      <td style="color:var(--amber)">${amt?fmt(amt):'—'}</td>
       <td>${fKm2?fKm2.toLocaleString():'—'}</td>
       <td style="color:var(--green)">${fNext2?fNext2.toLocaleString():'—'}</td>
-      <td>${fWorkshop||'—'}</td>
-      <td style="color:var(--text3);font-size:10px">${fNoteFull||'—'}</td>
+      <td>${(r['Workshop']||r['workshop']||'').trim()||'—'}</td>
+      <td style="color:var(--text3);font-size:10px">${(r['notes']||r['Notes']||'').trim()||'—'}</td>
     </tr>`;
   }).join('');
   tfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
     <td colspan="4" style="font-size:9px;color:var(--text3)">${rows.length} invoices</td>
-    <td style="color:var(--amber)">${total.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+    <td style="color:var(--amber)">${fmt(total)}</td>
     <td colspan="4">—</td>
   </tr>`;
 }
@@ -10007,60 +10004,24 @@ function exportMaintLog() {
 
 // Export filtered Fleet Maintenance Details
 function exportFleetMaint() {
-  // Read current filters
-  const plateEff2 = document.getElementById('fh-maint-plate')?.value||'';
-  const item2     = document.getElementById('fh-maint-item')?.value||'';
-  const month2    = document.getElementById('fh-maint-month')?.value||'';
-  const fType2    = document.getElementById('fh-maint-type')?.value||'';
-  const search2   = (document.getElementById('fh-maint-search')?.value||'').toLowerCase();
-
-  if(!plateEff2&&!item2&&!fType2&&!month2&&!search2){ alert('Apply a filter first'); return; }
-
-  const rows = STATE.maintenance.filter(r=>{
-    const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-    const rItem=(r['Category']||r['Item']||r['item']||'').trim();
-    const rType=plateType(rPlate);
-    if(plateEff2 && rPlate!==plateEff2) return false;
-    if(item2 && rItem!==item2) return false;
-    if(fType2 && rType!==fType2) return false;
-    if(search2 && !rPlate.toLowerCase().includes(search2) && !rItem.toLowerCase().includes(search2)) return false;
-    const dkDate = r['Date'] ? new Date(r['Date']) : null;
-    const rMk = dkDate&&!isNaN(dkDate) ? dkDate.getFullYear()+'-'+String(dkDate.getMonth()+1).padStart(2,'0') : '';
-    if(month2 && rMk!==month2) return false;
-    return true;
-  });
-
-  if(!rows.length){ alert('No records to export'); return; }
-
-  const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
-  const headers = ['Date','Truck Plate','Type','Category','Invoice No','Amount','Current KM','Next KM','Workshop','Notes','Description'];
+  const tbody = document.getElementById('fleet-maint-tbody');
+  if (!tbody) return;
+  
+  const rows = [...tbody.querySelectorAll('tr')].filter(tr => tr.querySelectorAll('td').length > 1);
+  if (!rows.length) { alert('No data to export - apply filters first'); return; }
+  
+  const headers = ['Date','Truck Plate','Type','Category','Invoice','Cost','Current KM','Alarm KM','Workshop','Notes','Description'];
   let csv = headers.join(',') + '\n';
-  rows.forEach(r=>{
-    const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-    const amt=parseAmount(r['cost']||r['Amount']||r['amount']||r['Cost']);
-    const km=parseAmount(r['Current KM']||r['KM']||r['km']||0);
-    const nxt=parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||r['Next_KM']||0);
-    csv += [
-      esc(r['Date']||''),
-      esc(rPlate),
-      esc(plateType(rPlate)),
-      esc(r['Category']||r['Item']||r['item']||''),
-      esc(r['invoice no']||r['Invoice No']||r['Invoice']||''),
-      amt||0,
-      km||0,
-      nxt||0,
-      esc(r['Workshop']||r['workshop']||''),
-      esc(r['notes']||r['Notes']||''),
-      esc(r['Description']||r['description']||r['desc']||'')
-    ].join(',') + '\n';
+  rows.forEach(tr => {
+    const cells = [...tr.querySelectorAll('td')].map(td => `"${td.textContent.trim().replace(/"/g,'""')}"`);
+    csv += cells.join(',') + '\n';
   });
-
+  
   const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'fleet_maintenance_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'fleet_maintenance_filtered_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
-  URL.revokeObjectURL(a.href);
 }
 
 // Boot
