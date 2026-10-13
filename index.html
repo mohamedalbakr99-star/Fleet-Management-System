@@ -9333,10 +9333,11 @@ function filterFuelPlate(val) {
 
 
 function renderFleetMaintDetails(){
-  const plate=document.getElementById('fh-maint-plate')?.value||'';
-  const item=document.getElementById('fh-maint-item')?.value||'';
-  const month=document.getElementById('fh-maint-month')?.value||'';
-  
+  const tbody=document.getElementById('fleet-maint-tbody');
+  const tfoot=document.getElementById('fleet-maint-totals');
+  const fType=document.getElementById('fh-maint-type')?.value||'';
+  const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+
   // Populate month selector once
   const monSel = document.getElementById('fh-maint-month');
   if(monSel && monSel.children.length <= 1) {
@@ -9353,13 +9354,10 @@ function renderFleetMaintDetails(){
       monSel.innerHTML += '<option value="'+mk+'">'+label+'</option>';
     });
   }
-  const tbody=document.getElementById('fleet-maint-tbody');
-  const tfoot=document.getElementById('fleet-maint-totals');
-
-  const search=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
-  const fType=document.getElementById('fh-maint-type')?.value||'';
+  const month=document.getElementById('fh-maint-month')?.value||'';
 
   // Filter plate dropdown based on selected type
+  const plate=document.getElementById('fh-maint-plate')?.value||'';
   const plateSel=document.getElementById('fh-maint-plate');
   if(plateSel){
     // Ensure all plates from maintenance data are in dropdown
@@ -9392,7 +9390,7 @@ function renderFleetMaintDetails(){
     STATE.maintenance.forEach(r=>{
       const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
       if(fType&&plateType(rp)!==fType) return;
-      if(plate&&rp!==plate) return;
+      if(plateEff&&rp!==plateEff) return;
       const it=(r['Category']||r['Item']||r['item']||'').trim();
       if(it) items.add(it);
     });
@@ -9400,13 +9398,14 @@ function renderFleetMaintDetails(){
     itemSel.innerHTML='<option value="">— Select Category —</option>';
     [...items].sort().forEach(it=>{ itemSel.innerHTML+=`<option value="${it}"${it===prevItem?' selected':''}>${it}</option>`; });
   }
-  if(false){
-    tbody.innerHTML=''; tfoot.innerHTML='';
+  // Re-read item after dropdown rebuild
+  const item=document.getElementById('fh-maint-item')?.value||'';
+
+  if(!plateEff&&!item&&!fType&&!month&&!fhSearch){
+    if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';
+    if(tfoot)tfoot.innerHTML='';
     return;
   }
-
-  const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
-  if(!plateEff&&!item&&!fType&&!month&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
   const rows=STATE.maintenance.filter(r=>{
     const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
     const rItem=(r['Category']||r['Item']||r['item']||'').trim();
