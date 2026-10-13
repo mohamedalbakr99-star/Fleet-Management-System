@@ -9445,7 +9445,6 @@ function renderFleetMaintDetails(){
     return `<tr>
       <td>${fDate2}</td>
       <td style="font-weight:600">${fPlate2||'—'}</td>
-      <td><span class="badge ${fBadge2}" style="font-size:8px">${fType2}</span></td>
       <td>${fItem2||'—'}</td>
       <td>${fInv||'—'}</td>
       <td style="color:var(--amber);font-weight:600">${amt?amt.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}):'—'}</td>
@@ -9456,7 +9455,7 @@ function renderFleetMaintDetails(){
     </tr>`;
   }).join('');
   tfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
-    <td colspan="5" style="font-size:9px;color:var(--text3)">${rows.length} invoices</td>
+    <td colspan="4" style="font-size:9px;color:var(--text3)">${rows.length} invoices</td>
     <td style="color:var(--amber)">${total.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
     <td colspan="4">—</td>
   </tr>`;
