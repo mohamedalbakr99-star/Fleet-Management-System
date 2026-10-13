@@ -7870,13 +7870,40 @@ function removeItem(i) {
 }
 
 function exportFleetMaint(){
-  let csv='Date,Plate,Item,Invoice No,Amount,KM,Next KM,Workshop,Notes\n';
-  document.querySelectorAll('#fleet-maint-tbody tr').forEach(tr=>{
-    csv+=[...tr.querySelectorAll('td')].map(td=>`"${td.textContent.trim()}"`).join(',')+'\n';
+  const plateEff2=document.getElementById('fh-maint-plate')?.value||'';
+  const item2=document.getElementById('fh-maint-item')?.value||'';
+  const month2=document.getElementById('fh-maint-month')?.value||'';
+  const fType2=document.getElementById('fh-maint-type')?.value||'';
+  const search2=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
+  const esc=v=>'"'+(String(v||'').replace(/"/g,'""'))+'"';
+  const rows=STATE.maintenance.filter(r=>{
+    const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const ri=(r['Category']||r['Item']||r['item']||'').trim();
+    if(plateEff2&&rp!==plateEff2)return false;
+    if(item2&&ri!==item2)return false;
+    if(fType2&&plateType(rp)!==fType2)return false;
+    if(search2&&!rp.toLowerCase().includes(search2)&&!ri.toLowerCase().includes(search2))return false;
+    if(month2){const d=r['Date']?new Date(r['Date']):null;const mk=d&&!isNaN(d)?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'):'';if(mk!==month2)return false;}
+    return true;
   });
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='fleet_maint.csv';a.click();URL.revokeObjectURL(url);
+  if(!rows.length){alert('No data to export');return;}
+  let csv='Date,Truck Plate,Type,Category,Invoice No,Amount,Current KM,Next KM,Workshop,Notes,Description\n';
+  rows.forEach(r=>{
+    const date=r['Date']?new Date(r['Date']).toISOString().slice(0,10):'';
+    const plate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const type=plateType(plate);
+    const cat=(r['Category']||r['Item']||r['item']||'').trim();
+    const inv=(r['invoice no']||r['Invoice No']||r['Invoice']||'').trim();
+    const amt=parseAmount(r['cost']||r['Amount']||r['amount']||0);
+    const km=parseAmount(r['Current KM']||r['KM']||r['km']||0);
+    const nxt=parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||r['Next_KM']||0);
+    const ws=(r['Workshop']||r['workshop']||'').trim();
+    const notes=(r['notes']||r['Notes']||'').trim();
+    const desc=(r['Description']||r['description']||r['desc']||'').trim();
+    csv+=[esc(date),esc(plate),esc(type),esc(cat),esc(inv),amt||0,km||0,nxt||0,esc(ws),esc(notes),esc(desc)].join(',')+'\n';
+  });
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fleet_maint_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href);
 }
 
 // ── Rental Historical ──
@@ -9436,24 +9463,25 @@ function renderFleetMaintDetails(){
     const fDate2=r['Date']?new Date(r['Date']).toISOString().slice(0,10):'—';
     const fKm2=parseAmount(r['Current KM']||r['KM']||r['km']||0);
     const fNext2=parseAmount(r['Alarm KM ']||r['Alarm KM']||r['Next KM']||r['Next_KM']||0);
-    const fType2=plateType(fPlate2);
-    const fBadge2={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'}[fType2]||'bg';
+    const fWorkshop=(r['Workshop']||r['workshop']||'').trim();
+    const fNotes=(r['notes']||r['Notes']||'').trim();
+    const fDesc=(r['Description']||r['description']||r['desc']||'').trim();
+    const fNoteFull=[fNotes,fDesc].filter(Boolean).join(' | ');
     return `<tr>
       <td>${fDate2}</td>
       <td style="font-weight:600">${fPlate2||'—'}</td>
-      <td><span class="badge ${fBadge2}" style="font-size:8px">${fType2}</span></td>
       <td>${fItem2||'—'}</td>
       <td>${r['invoice no']||r['Invoice No']||'—'}</td>
-      <td style="color:var(--amber)">${amt?fmt(amt):'—'}</td>
+      <td style="color:var(--amber);font-weight:600">${amt?amt.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}):'—'}</td>
       <td>${fKm2?fKm2.toLocaleString():'—'}</td>
       <td style="color:var(--green)">${fNext2?fNext2.toLocaleString():'—'}</td>
-      <td>${(r['Workshop']||r['workshop']||'').trim()||'—'}</td>
-      <td style="color:var(--text3);font-size:10px">${(r['notes']||r['Notes']||'').trim()||'—'}</td>
+      <td>${fWorkshop||'—'}</td>
+      <td style="color:var(--text3);font-size:10px">${fNoteFull||'—'}</td>
     </tr>`;
   }).join('');
   tfoot.innerHTML=`<tr style="font-weight:700;border-top:2px solid var(--border2)">
     <td colspan="4" style="font-size:9px;color:var(--text3)">${rows.length} invoices</td>
-    <td style="color:var(--amber)">${fmt(total)}</td>
+    <td style="color:var(--amber)">${total.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
     <td colspan="4">—</td>
   </tr>`;
 }
@@ -10002,27 +10030,6 @@ function exportMaintLog() {
   a.click();
 }
 
-// Export filtered Fleet Maintenance Details
-function exportFleetMaint() {
-  const tbody = document.getElementById('fleet-maint-tbody');
-  if (!tbody) return;
-  
-  const rows = [...tbody.querySelectorAll('tr')].filter(tr => tr.querySelectorAll('td').length > 1);
-  if (!rows.length) { alert('No data to export - apply filters first'); return; }
-  
-  const headers = ['Date','Truck Plate','Type','Category','Invoice','Cost','Current KM','Alarm KM','Workshop','Notes','Description'];
-  let csv = headers.join(',') + '\n';
-  rows.forEach(tr => {
-    const cells = [...tr.querySelectorAll('td')].map(td => `"${td.textContent.trim().replace(/"/g,'""')}"`);
-    csv += cells.join(',') + '\n';
-  });
-  
-  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'fleet_maintenance_filtered_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-}
 
 // Boot
 (async function() {
