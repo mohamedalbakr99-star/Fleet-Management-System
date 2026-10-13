@@ -9414,7 +9414,7 @@ function renderFleetMaintDetails(){
     if(plateEff && rPlate!==plateEff) return false;
     if(item && rItem!==item) return false;
     if(fType && rType!==fType) return false;
-    if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
+    if(fhSearch && !rPlate.toLowerCase().includes(fhSearch) && !rItem.toLowerCase().includes(fhSearch)) return false;
     const dkRaw=r['Date']||'';
     const dkDate = dkRaw ? new Date(dkRaw) : null;
     const rMk = dkDate && !isNaN(dkDate) ? dkDate.getFullYear()+'-'+String(dkDate.getMonth()+1).padStart(2,'0') : '';
