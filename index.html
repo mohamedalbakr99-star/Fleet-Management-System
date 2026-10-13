@@ -9358,18 +9358,60 @@ function renderFleetMaintDetails(){
 
   const search=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
   const fType=document.getElementById('fh-maint-type')?.value||'';
+
+  // Filter plate dropdown based on selected type
+  const plateSel=document.getElementById('fh-maint-plate');
+  if(plateSel){
+    // Ensure all plates from maintenance data are in dropdown
+    const existingVals=new Set([...plateSel.options].map(o=>o.value).filter(v=>v));
+    STATE.maintenance.forEach(r=>{
+      const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+      if(rp&&!existingVals.has(rp)){
+        plateSel.innerHTML+=`<option value="${rp}">${rp} (${plateType(rp)})</option>`;
+        existingVals.add(rp);
+      }
+    });
+    // Show/hide options based on type filter
+    [...plateSel.options].forEach(opt=>{
+      if(!opt.value){opt.style.display='';return;}
+      if(fType&&plateType(opt.value)!==fType) opt.style.display='none';
+      else opt.style.display='';
+    });
+    // Reset plate if selected plate doesn't match new type
+    if(plate&&fType&&plateType(plate)!==fType){
+      plateSel.value='';
+    }
+  }
+  // Re-read plate after possible reset
+  const plateEff=document.getElementById('fh-maint-plate')?.value||'';
+
+  // Populate item dropdown from filtered records
+  const itemSel=document.getElementById('fh-maint-item');
+  if(itemSel){
+    const items=new Set();
+    STATE.maintenance.forEach(r=>{
+      const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+      if(fType&&plateType(rp)!==fType) return;
+      if(plate&&rp!==plate) return;
+      const it=(r['Category']||r['Item']||r['item']||'').trim();
+      if(it) items.add(it);
+    });
+    const prevItem=itemSel.value;
+    itemSel.innerHTML='<option value="">— Select Category —</option>';
+    [...items].sort().forEach(it=>{ itemSel.innerHTML+=`<option value="${it}"${it===prevItem?' selected':''}>${it}</option>`; });
+  }
   if(false){
     tbody.innerHTML=''; tfoot.innerHTML='';
     return;
   }
 
   const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
-  if(!plate&&!item&&!from&&!to&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
+  if(!plateEff&&!item&&!fType&&!month&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
   const rows=STATE.maintenance.filter(r=>{
     const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
     const rItem=(r['Category']||r['Item']||r['item']||'').trim();
     const rType=plateType(rPlate);
-    if(plate && rPlate!==plate) return false;
+    if(plateEff && rPlate!==plateEff) return false;
     if(item && rItem!==item) return false;
     if(fType && rType!==fType) return false;
     if(search && !rPlate.toLowerCase().includes(search) && !rItem.toLowerCase().includes(search)) return false;
