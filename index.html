@@ -4782,6 +4782,23 @@ async function fetchJSON(url) {
 
 async function loadAllData() {
   const refreshEl = document.getElementById('last-refresh-time');
+
+  // If backup mode — use embedded static data instead of fetching
+  if (window.STATIC_DATA && window.STATIC_DATA._backupTime) {
+    console.log('📦 Backup mode — loaded from static data:', window.STATIC_DATA._backupTime);
+    STATE.sales             = window.STATIC_DATA.sales || [];
+    STATE.salesHist         = window.STATIC_DATA.salesHist || [];
+    STATE.daily             = window.STATIC_DATA.daily || [];
+    STATE.prices            = window.STATIC_DATA.prices || [];
+    STATE.fuel              = window.STATIC_DATA.fuel || [];
+    STATE.maintenance       = window.STATIC_DATA.maintenance || [];
+    STATE.vendorClientsSheet= window.STATIC_DATA.vendorClientsSheet || [];
+    STATE.vendorClients     = window.STATIC_DATA.vendorClients || [];
+    if(refreshEl) refreshEl.textContent = '📦 ' + new Date(window.STATIC_DATA._backupTime).toLocaleDateString('en-US');
+    renderAll();
+    return;
+  }
+
   if(refreshEl) refreshEl.textContent = '⟳';
   const tasks = [
     {key:'daily',              fn:() => fetchCSV(SOURCES.daily)},
@@ -9923,7 +9940,26 @@ function downloadForNetlify(){
   const pw=prompt('🔒 Enter download password:');
   if(!pw) return;
   if(pw!=='ZFI2026'){alert('❌ Incorrect password');return;}
-  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+
+  // Embed current STATE data as static backup
+  const staticData = {
+    sales: STATE.sales || [],
+    salesHist: STATE.salesHist || [],
+    daily: STATE.daily || [],
+    prices: STATE.prices || [],
+    fuel: STATE.fuel || [],
+    maintenance: STATE.maintenance || [],
+    vendorClientsSheet: STATE.vendorClientsSheet || [],
+    vendorClients: STATE.vendorClients || [],
+    _backupTime: new Date().toISOString()
+  };
+
+  // Get current HTML and inject STATIC_DATA before </head>
+  let html = document.documentElement.outerHTML;
+  const staticScript = `<script>window.STATIC_DATA=${JSON.stringify(staticData)};<\/script>`;
+  html = html.replace('</head>', staticScript + '</head>');
+
+  const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='index.html';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
