@@ -5030,8 +5030,29 @@ const TRANSFER_PLATES = ['RRB 3498','VRB 4654','TSB 2096','GZA 1973'];
 const SUPPORT_PLATES  = ['TSA 5700','TSA 5601','KSB 3325'];
 const LOCAL_OVERRIDE  = ['HSA 3325']; // Forces Local Trucks classification
 
+// Plate aliases — old plate → new plate (for renamed/replaced vehicles)
+const PLATE_ALIASES = {
+  'EDA 4919': 'NTA 7558',
+};
+function normalizePlate(raw) {
+  const p = (raw||'').trim().replace(/\s+/g,' ');
+  return PLATE_ALIASES[p] || p;
+}
+
+// Returns display label showing both old and new plate when an alias exists
+// e.g. "NTA 7558 / EDA 4919"
+function displayPlate(raw) {
+  const p = (raw||'').trim().replace(/\s+/g,' ');
+  const newPlate = PLATE_ALIASES[p];
+  if (newPlate) return newPlate + ' / ' + p;
+  // Check if p is the NEW plate — find any alias pointing to it
+  const oldPlate = Object.keys(PLATE_ALIASES).find(k => PLATE_ALIASES[k] === p);
+  if (oldPlate) return p + ' / ' + oldPlate;
+  return p;
+}
+
 function plateType(raw) {
-  const norm = (raw||'').trim().replace(/\s+/g,' ');
+  const norm = normalizePlate((raw||'').trim().replace(/\s+/g,' '));
   const num = extractDigits(raw||'');
   if (!num) return 'Local Trucks';
   // Check local override first (plates that share digits with support but are Local)
@@ -5486,7 +5507,7 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
       if(!date) return;
       const type=plateType(r['المركبة']||r['Plate']||'');
       if(type!=='ZF Employee Vehicles') return;
-      const rNorm=(r['المركبة']||'').trim().replace(/\s+/g,' ');
+      const rNorm=normalizePlate((r['المركبة']||'').trim().replace(/\s+/g,' '));
       const veh=STATE.fleet.find(v=>{
         if(v.arPlate) return v.arPlate.replace(/\s+/g,' ').trim()===rNorm;
         return extractDigits(v.plate)===extractDigits(rNorm);
@@ -5515,7 +5536,7 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
         const type=plateType(r['المركبة']||r['Plate']||'');
         if(type!=='ZF Employee Vehicles') return;
         // Match vehicle
-        const rNorm=(r['المركبة']||'').trim().replace(/\s+/g,' ');
+        const rNorm=normalizePlate((r['المركبة']||'').trim().replace(/\s+/g,' '));
         const veh=STATE.fleet.find(v=>{
           if(v.arPlate) return v.arPlate.replace(/\s+/g,' ').trim()===rNorm;
           return extractDigits(v.plate)===extractDigits(rNorm);
@@ -5551,7 +5572,7 @@ function renderDailyTable(allDays, salesMap, rentalMap, fuelMap, maintMap, fuelO
       STATE.maintenance.forEach(r=>{
         const rDate=parseDate(r['Date']||r['date']);
         if(!rDate||dateToKey(rDate)!==dk) return;
-        const plate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+        const plate=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
         if(supVehData[plate]) supVehData[plate].maint=(supVehData[plate].maint||0)+parseAmount(r['cost']||r['Amount']||r['amount']||0);
       });
       // Build one row per day (aggregated across all vehicles)
@@ -5804,7 +5825,7 @@ function renderHistorical() {
       const km    = parseAmount(r['عداد الكيلومتر'] || r['KM'] || r['Odometer'] || r['odometer'] || r['الكيلومتر'] || r['عداد'] || 0);
       monthly[mk].fuel        += fCost;
       monthly[mk].fuelLiters  += fLit;
-      const plate = (r['المركبة']||r['Plate']||'').toString().trim();
+      const plate = normalizePlate((r['المركبة']||r['Plate']||'').toString().trim());
       if (km > 0) {
         if (!monthly[mk]._kmByPlate[plate]) monthly[mk]._kmByPlate[plate] = [];
         monthly[mk]._kmByPlate[plate].push(km);
@@ -7016,7 +7037,7 @@ function renderFleetGrid() {
     const dateStr = r['التاريخ'] || r['Date'] || '';
     const fDate = parseDate(dateStr);
     const isCurrentMon = isCurrentMonth(fDate);
-    const rPlate = (r['المركبة'] || r['Plate'] || '').trim();
+    const rPlate = normalizePlate((r['المركبة'] || r['Plate'] || '').trim());
     const rNum = extractDigits(rPlate);
     // Find unique best match
     // Try arPlate match first
@@ -7062,7 +7083,7 @@ function renderFleetGrid() {
   STATE.maintenance.forEach(r => {
     const date = parseDate(r['Date'] || r['date']);
     if (!isCurrentMonth(date)) return;
-    const plate = (r['Plate'] || '').trim();
+    const plate = normalizePlate((r['Plate'] || '').trim());
     if (vehStats[plate]) vehStats[plate].maint += parseAmount(r['Amount']);
   });
 
@@ -7086,7 +7107,7 @@ function renderFleetGrid() {
     const hiddenStyle = visible ? '' : 'display:none;';
     return `<div class="fc-card" data-type="${v.type}" data-city="${v.city}" style="transition:border-color 0.2s;${hiddenStyle}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div class="fc-plate" style="font-size:14px">${v.plate}</div>
+        <div class="fc-plate" style="font-size:14px">${displayPlate(v.plate)}</div>
         <span class="badge ${colorMap[v.type]||'bg'}" style="font-size:9px">${v.type}</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${v.city} · ${v.make} ${v.model}</div>
@@ -7339,7 +7360,7 @@ function renderFHFuelLog() {
     const db = parseDate(b['التاريخ']||b['Date']);
     return (da||0)-(db||0);
   }).forEach(r => {
-    const rPlateRaw = (r['المركبة']||r['Plate']||'').trim();
+    const rPlateRaw = normalizePlate((r['المركبة']||r['Plate']||'').trim());
     const rNorm     = rPlateRaw.replace(/\s+/g,' ');
     const rNum      = extractDigits(rPlateRaw);
 
@@ -7388,7 +7409,7 @@ function renderFHFuelLog() {
     tCost+=r.cost;tLiters+=r.liters;tDriven+=r.driven;
     return `<tr>
       <td style="color:var(--text2)">${r.date?r.date.toISOString().slice(0,10):'—'}</td>
-      <td style="font-weight:600">${r.plate}</td>
+      <td style="font-weight:600">${displayPlate(r.plate)}</td>
       <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.prevKm?r.prevKm.toLocaleString():'—'}</td>
       <td style="font-weight:600">${r.km?r.km.toLocaleString():'—'}</td>
@@ -7431,7 +7452,7 @@ function renderAlarms() {
   // ── Get latest KM per vehicle ──
   const latestKm = {};
   STATE.fuel.forEach(r => {
-    const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
+    const rNorm = normalizePlate((r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' '));
     const v = STATE.fleet.find(v2 => {
       if(v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim()===rNorm;
       return extractDigits(v2.plate)===extractDigits(rNorm);
@@ -7451,7 +7472,7 @@ function renderAlarms() {
     console.log('Parsed:', {plate:samplePlate, item:sampleItem, nextKm:sampleNext});
   }
   STATE.maintenance.forEach(r => {
-    const plate  = (r['Truck Plate']||r['Plate']||r['plate']||r['Vehicle']||'').trim();
+    const plate  = normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||r['Vehicle']||'').trim());
     const item   = (r['Category']||r['Item']||r['item']||r['Maintenance Item']||'').trim();
     const nextKm = parseAmount(r['Alarm KM ']||r['Alarm KM ']||r['Alarm KM']||r['Next_KM']||r['next_km']||r['NextKM']||r['Next KM']||0);
     if(!plate||!item||!nextKm) return;
@@ -7506,7 +7527,7 @@ function renderAlarms() {
     html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:15px;font-weight:800">${v.plate}</span>
+          <span style="font-size:15px;font-weight:800">${displayPlate(v.plate)}</span>
           <span class="badge ${typeBadge}">${type}</span>
           ${curKm>0?`<span style="font-size:10px;color:var(--text3)">📍 ${curKm.toLocaleString()} km</span>`:''}
           ${overdue>0?`<span style="background:var(--red);color:#fff;border-radius:10px;padding:2px 8px;font-size:9px;font-weight:700">🔴 ${overdue} Overdue</span>`:''}
@@ -7598,7 +7619,7 @@ function renderAlarms() {
     } else {
       const tb = {'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
       alarmTbody.innerHTML = allRows.map(r => `<tr>
-        <td style="font-weight:600">${r.plate}</td>
+        <td style="font-weight:600">${displayPlate(r.plate)}</td>
         <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
         <td>${r.item}</td>
         <td>${r.curKm?r.curKm.toLocaleString():'—'}</td>
@@ -7628,7 +7649,7 @@ function exportAlarms() {
   const kmOverrides = {}; // No overrides now
   const latestKm = {};
   STATE.fuel.forEach(r => {
-    const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
+    const rNorm = normalizePlate((r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' '));
     const v = STATE.fleet.find(v2 => {
       if(v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim()===rNorm;
       return extractDigits(v2.plate)===extractDigits(rNorm);
@@ -7640,7 +7661,7 @@ function exportAlarms() {
 
   const maintMap = {};
   STATE.maintenance.forEach(r => {
-    const plate  = (r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const plate  = normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const item   = (r['Category']||r['Item']||r['item']||'').trim();
     const nextKm = parseAmount(r['Alarm KM ']||r['Alarm KM']||0);
     if(!plate||!item||!nextKm) return;
@@ -7744,7 +7765,7 @@ function renderFleetHist(){
       if(!date||isNaN(date)) return;
       const mk=getMonthKey(date);
       if(fMonth!=='all'&&mk!==fMonth) return;
-      const rPlateRaw=(r['المركبة']||r['Plate']||'').trim();
+      const rPlateRaw=normalizePlate((r['المركبة']||r['Plate']||'').trim());
       const rNorm=rPlateRaw.replace(/\s+/g,' ').trim();
       const rNum=extractDigits(rPlateRaw);
       const vNum=extractDigits(v.plate);
@@ -7772,7 +7793,7 @@ function renderFleetHist(){
       // KM: use last KM reading - baseline
       let lastKmAll=0, firstKmAll=0;
       STATE.fuel.forEach(r=>{
-        const rPlateRaw=(r['المركبة']||r['Plate']||'').trim();
+        const rPlateRaw=normalizePlate((r['المركبة']||r['Plate']||'').trim());
         const rNorm=rPlateRaw.replace(/\s+/g,' ').trim();
         const rNum=extractDigits(rPlateRaw);
         // arPlate match first
@@ -7798,7 +7819,7 @@ function renderFleetHist(){
       const totKm = lastKmAll > 0 && firstKmAll > 0 && lastKmAll > firstKmAll ? lastKmAll-firstKmAll : 0;
       // Maintenance
       let totMaint=0,totInv=0;
-      STATE.maintenance.forEach(r=>{const mp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();if(mp===v.plate){totMaint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);totInv++;}});
+      STATE.maintenance.forEach(r=>{const mp=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());if(mp===v.plate){totMaint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);totInv++;}});
       if(totFuel>0||totMaint>0)
         rows.push({plate:v.plate,type,mk:'all',fuel:totFuel,liters:totLiters,km:totKm,kmDriven:totKm,maint:totMaint,invoices:totInv});
     } else {
@@ -7810,7 +7831,7 @@ function renderFleetHist(){
         if(!date||isNaN(date)) return;
         const mk=getMonthKey(date);
         if(fMonth!=='all'&&mk!==fMonth) return;
-        if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);invoices++;}
+        if(normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim())===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);invoices++;}
       });
       // KM Driven for selected month = lastKm - firstKm in that month
       const kmDriven2 = s.km>0 && s.firstKm>0 && s.km>s.firstKm ? s.km-s.firstKm : 0;
@@ -7849,7 +7870,7 @@ function renderFleetHist(){
     const tot100= r.kmDriven>0&&total>0     ? (total/r.kmDriven*100).toFixed(2): '—';
     const tb={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
     return `<tr>
-      <td style="font-weight:700;color:var(--text)">${r.plate} <span style="font-size:9px;color:var(--text3)">${period}</span></td>
+      <td style="font-weight:700;color:var(--text)">${displayPlate(r.plate)} <span style="font-size:9px;color:var(--text3)">${period}</span></td>
       <td style="text-align:center">${r.kmDriven>0?r.kmDriven.toLocaleString():'—'}</td>
       <td style="background:rgba(240,160,32,0.05)">${r.liters>0?Math.round(r.liters).toLocaleString():'—'}</td>
       <td style="color:var(--blue);background:rgba(240,160,32,0.05)">${r.fuel?fmt(r.fuel):'—'}</td>
@@ -7895,7 +7916,7 @@ function exportFleetMaint(){
   const search2=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
   const esc=v=>'"'+(String(v||'').replace(/"/g,'""'))+'"';
   const rows=STATE.maintenance.filter(r=>{
-    const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const rp=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const ri=(r['Category']||r['Item']||r['item']||'').trim();
     if(plateEff2&&rp!==plateEff2)return false;
     if(item2&&ri!==item2)return false;
@@ -7908,7 +7929,7 @@ function exportFleetMaint(){
   let csv='Date,Truck Plate,Type,Category,Invoice No,Amount,Current KM,Next KM,Workshop,Notes,Description\n';
   rows.forEach(r=>{
     const date=r['Date']?new Date(r['Date']).toISOString().slice(0,10):'';
-    const plate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const plate=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const type=plateType(plate);
     const cat=(r['Category']||r['Item']||r['item']||'').trim();
     const inv=(r['invoice no']||r['Invoice No']||r['Invoice']||'').trim();
@@ -7965,7 +7986,7 @@ function renderFleetKPIs() {
     STATE.fuel.forEach(r=>{
       const date=parseDate(r['التاريخ']||r['Date']||'');
       if(!date||!isCurrentMonth(date)) return;
-      const rP=(r['المركبة']||r['Plate']||'').trim();
+      const rP=normalizePlate((r['المركبة']||r['Plate']||'').trim());
       const rN=rP.replace(/\s+/g,' ').trim(),rNum=extractDigits(rP);
       let match=false;
       if(v.arPlate){match=v.arPlate.replace(/\s+/g,' ').trim()===rN;}
@@ -7974,7 +7995,7 @@ function renderFleetKPIs() {
       fuel+=parseAmount(r['التكلفة']||r['Cost']);liters+=parseAmount(r['عدد اللترات']||r['Liters']);
       const km=parseAmount(r['عداد الكيلومتر']||r['KM']);if(km>lastKm)lastKm=km;if(km>0&&(firstKm===0||km<firstKm))firstKm=km;
     });
-    STATE.maintenance.forEach(r=>{const date=parseDate(r['Date']||r['date']);if(!date||!isCurrentMonth(date))return;if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}});
+    STATE.maintenance.forEach(r=>{const date=parseDate(r['Date']||r['date']);if(!date||!isCurrentMonth(date))return;if(normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim())===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}});
     // KM Driven = lastKm - firstKm from fuel records (consistent with table/cards)
     const kmd = lastKm>0 && firstKm>0 && lastKm>firstKm ? lastKm-firstKm : 0;
     totKm+=kmd;totFuel+=fuel;totMaint+=maint;totLiters+=liters;totInv+=inv;
@@ -8177,7 +8198,7 @@ function renderFHTLineChart() {
     STATE.fuel.forEach(r=>{
       const date=parseDate(r['\u0627\u0644\u062a\u0627\u0631\u064a\u062e']||r['Date']||'');
       if(!date) return;
-      const rP=(r['\u0627\u0644\u0645\u0631\u0643\u0628\u0629']||r['Plate']||'').trim();
+      const rP=normalizePlate((r['\u0627\u0644\u0645\u0631\u0643\u0628\u0629']||r['Plate']||'').trim());
       const rN=rP.replace(/\s+/g,' ').trim(),rNum=extractDigits(rP);
       let match=false;
       if(v.arPlate){match=v.arPlate.replace(/\s+/g,' ').trim()===rN;}
@@ -8200,7 +8221,7 @@ function renderFHTLineChart() {
     STATE.maintenance.forEach(r=>{
       const date=parseDate(r['Date']||r['date']);
       if(!date)return;
-      if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()!==v.plate)return;
+      if(normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim())!==v.plate)return;
       const mk=getMonthKey(date);
       if(!vMaint[mk])vMaint[mk]=0;
       vMaint[mk]+=parseAmount(r['cost']||r['Amount']||r['amount']||0);
@@ -8300,7 +8321,7 @@ function renderFleetHistKPIs() {
       const date=parseDate(r['التاريخ']||r['Date']||'');
       if(!date) return;
       if(fMonth!=='all'&&getMonthKey(date)!==fMonth) return;
-      const rP=(r['المركبة']||r['Plate']||'').trim();
+      const rP=normalizePlate((r['المركبة']||r['Plate']||'').trim());
       const rN=rP.replace(/\s+/g,' ').trim(),rNum=extractDigits(rP);
       let match=false;
       if(v.arPlate){match=v.arPlate.replace(/\s+/g,' ').trim()===rN;}
@@ -8322,7 +8343,7 @@ function renderFleetHistKPIs() {
       const date=parseDate(r['Date']||r['date']);
       if(!date) return;
       if(fMonth!=='all'&&getMonthKey(date)!==fMonth) return;
-      if((r['Truck Plate']||r['Plate']||r['plate']||'').trim()===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}
+      if(normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim())===v.plate){maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);inv++;}
     });
 
     // KM Driven = lastKm - firstKm from fuel records (consistent with table/cards)
@@ -8376,7 +8397,7 @@ function renderVehicleTable() {
     let curMonthFirstKm=0, curMonthLastKm=0;
     STATE.fuel.forEach(r => {
       const date = parseDate(r['التاريخ']||r['Date']||'');
-      const rPlate = (r['المركبة']||r['Plate']||'').trim();
+      const rPlate = normalizePlate((r['المركبة']||r['Plate']||'').trim());
       const rNum = extractDigits(rPlate);
       const vNum = extractDigits(v.plate);
       if(!vNum||!rNum) return;
@@ -8416,8 +8437,8 @@ function renderVehicleTable() {
       const date = parseDate(r['Date']||r['date']);
       const isCM = isCurrentMonth(date);
       if(!isCM) { console.log('Skip:', r['Date'], 'parsed:', date, 'currentMonth?', isCM); return; }
-      const mPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
-      if(v.plate.includes('VRB')||v.plate.includes('EDA')||v.plate.includes('TSA')) console.log('Check:', mPlate, 'vs', v.plate, 'cost:', r['cost'], 'match:', mPlate===v.plate);
+      const mPlate=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
+      if(v.plate.includes('VRB')||v.plate.includes('EDA')||v.plate.includes('TSA')||v.plate.includes('NTA')) console.log('Check:', mPlate, 'vs', v.plate, 'cost:', r['cost'], 'match:', mPlate===v.plate);
       if(mPlate===v.plate) { maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0); invoices++; }
     });
 
@@ -8463,7 +8484,7 @@ function renderVehicleTable() {
     const tb={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
     return `<tr>
       <td style="color:var(--text3)">${i+1}</td>
-      <td style="font-weight:700;color:var(--text)">${r.plate}</td>
+      <td style="font-weight:700;color:var(--text)">${displayPlate(r.plate)}</td>
       <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
       <td style="text-align:center">${r.kmDriven>0?r.kmDriven.toLocaleString():'—'}</td>
       <td style="background:rgba(240,160,32,0.05)">${r.liters>0?Math.round(r.liters).toLocaleString():'—'}</td>
@@ -8652,7 +8673,7 @@ async function saveMaintenanceRecord() {
   // Get last KM automatically from fuel records
   let lastKm = 0;
   STATE.fuel.forEach(r => {
-    const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
+    const rNorm = normalizePlate((r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' '));
     const v = STATE.fleet.find(v2 => {
       if(v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim()===rNorm;
       return extractDigits(v2.plate)===extractDigits(rNorm);
@@ -9074,7 +9095,7 @@ function renderFuelTable() {
     const db = parseDate(b['التاريخ']||b['Date']);
     return (da||0)-(db||0);
   }).forEach(r => {
-    const rPlate = (r['المركبة']||r['Plate']||'').trim();
+    const rPlate = normalizePlate((r['المركبة']||r['Plate']||'').trim());
     const rNum = extractDigits(rPlate);
     // Find unique best matching vehicle
     // First try: match by arPlate if available
@@ -9145,7 +9166,7 @@ function renderFuelTable() {
     const lkm1 = r.driven>0&&r.liters>0 ? (r.liters/r.driven).toFixed(4) : '—';
     return `<tr>
       <td style="color:var(--text2)">${r.date ? r.date.toISOString().slice(0,10) : '—'}</td>
-      <td style="font-weight:600;color:var(--text)">${r.plate}</td>
+      <td style="font-weight:600;color:var(--text)">${displayPlate(r.plate)}</td>
       <td><span class="badge ${typeBadge[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.city}</td>
       <td>${r.prevKm ? r.prevKm.toLocaleString() : '—'}</td>
@@ -9190,7 +9211,7 @@ function renderMaintTable() {
   }
 
   const rows = STATE.maintenance.filter(r => {
-    const mPlate = (r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const mPlate = normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const mItem = (r['Category']||r['Item']||r['item']||'').trim();
     if (fVeh && mPlate !== fVeh) return false;
     if (fItem && mItem !== fItem) return false;
@@ -9212,7 +9233,7 @@ function renderMaintTable() {
     const rawCost = r['cost']||r['Amount']||r['amount']||0;
     const amt = typeof rawCost==='number' ? rawCost : parseAmount(String(rawCost));
     total += amt;
-    const rPlate = (r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const rPlate = normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const rItem  = (r['Category']||r['Item']||r['item']||'').trim();
     const rDate  = r['Date'] ? new Date(r['Date']).toISOString().slice(0,10) : '—';
     const rKm    = parseAmount(r['Current KM']||r['KM']||r['km']||0);
@@ -9225,7 +9246,7 @@ function renderMaintTable() {
     const rDesc  = (r['Description']||r['description']||'').trim();
     return `<tr>
       <td style="color:var(--text2)">${rDate}</td>
-      <td style="font-weight:600">${rPlate||'—'}</td>
+      <td style="font-weight:600">${rPlate?displayPlate(rPlate):'—'}</td>
       <td><span class="badge ${rBadge}" style="font-size:8px">${rType||'—'}</span></td>
       <td>${rItem||'—'}</td>
       <td style="color:var(--text3)">${rInv||'—'}</td>
@@ -9255,7 +9276,7 @@ function updateNextKM() {
   let autoKm = 0;
   if (plate) {
     STATE.fuel.forEach(r => {
-      const rNorm = (r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' ');
+      const rNorm = normalizePlate((r['المركبة']||r['Plate']||'').trim().replace(/\s+/g,' '));
       const v = STATE.fleet.find(v2 => {
         if(v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim()===rNorm;
         return extractDigits(v2.plate)===extractDigits(rNorm);
@@ -9410,7 +9431,7 @@ function renderFleetMaintDetails(){
     // Ensure all plates from maintenance data are in dropdown
     const existingVals=new Set([...plateSel.options].map(o=>o.value).filter(v=>v));
     STATE.maintenance.forEach(r=>{
-      const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+      const rp=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
       if(rp&&!existingVals.has(rp)){
         plateSel.innerHTML+=`<option value="${rp}">${rp} (${plateType(rp)})</option>`;
         existingVals.add(rp);
@@ -9435,7 +9456,7 @@ function renderFleetMaintDetails(){
   if(itemSel){
     const items=new Set();
     STATE.maintenance.forEach(r=>{
-      const rp=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+      const rp=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
       if(fType&&plateType(rp)!==fType) return;
       if(plate&&rp!==plate) return;
       const it=(r['Category']||r['Item']||r['item']||'').trim();
@@ -9453,7 +9474,7 @@ function renderFleetMaintDetails(){
   const fhSearch=(document.getElementById('fh-maint-search')?.value||'').toLowerCase();
   if(!plateEff&&!item&&!fType&&!month&&!fhSearch){if(tbody)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a filter to load records</td></tr>';if(tfoot)tfoot.innerHTML='';return;}
   const rows=STATE.maintenance.filter(r=>{
-    const rPlate=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const rPlate=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const rItem=(r['Category']||r['Item']||r['item']||'').trim();
     const rType=plateType(rPlate);
     if(plateEff && rPlate!==plateEff) return false;
@@ -9476,7 +9497,7 @@ function renderFleetMaintDetails(){
   tbody.innerHTML=rows.map(r=>{
     const amt=parseAmount(r['cost']||r['Amount']||r['amount']);
     total+=amt;
-    const fPlate2=(r['Truck Plate']||r['Plate']||r['plate']||'').trim();
+    const fPlate2=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     const fItem2=(r['Category']||r['Item']||r['item']||'').trim();
     const fDate2=r['Date']?new Date(r['Date']).toISOString().slice(0,10):'—';
     const fKm2=parseAmount(r['Current KM']||r['KM']||r['km']||0);
@@ -9487,7 +9508,7 @@ function renderFleetMaintDetails(){
     const fNoteFull=[fNotes,fDesc].filter(Boolean).join(' | ');
     return `<tr>
       <td>${fDate2}</td>
-      <td style="font-weight:600">${fPlate2||'—'}</td>
+      <td style="font-weight:600">${fPlate2?displayPlate(fPlate2):'—'}</td>
       <td>${fItem2||'—'}</td>
       <td>${r['invoice no']||r['Invoice No']||'—'}</td>
       <td style="color:var(--amber);font-weight:600">${amt?amt.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}):'—'}</td>
@@ -9552,7 +9573,7 @@ function getMaintCostByType(monthKey, type) {
     if (!d || isNaN(d)) return;
     const mk = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     if (mk !== monthKey) return;
-    const plate = (r['Truck Plate']||r['Plate']||'').trim();
+    const plate = normalizePlate((r['Truck Plate']||r['Plate']||'').trim());
     if (plateType(plate) !== type) return;
     total += parseAmount(r['cost']||r['Amount']||0);
   });
@@ -9627,7 +9648,7 @@ function renderFHVehicleCards() {
     const mk = getMonthKey(d);
     if (fMonth && mk !== fMonth) return;
     const v = STATE.fleet.find(v2 => {
-      const rNorm = (r['المركبة']||r['Plate']||'').trim();
+      const rNorm = normalizePlate((r['المركبة']||r['Plate']||'').trim());
       if (v2.arPlate) return v2.arPlate.replace(/\s+/g,' ').trim() === rNorm.replace(/\s+/g,' ');
       return extractDigits(v2.plate) === extractDigits(rNorm);
     });
@@ -9647,7 +9668,7 @@ function renderFHVehicleCards() {
     if (!d || isNaN(d)) return;
     const mk = getMonthKey(d);
     if (fMonth && mk !== fMonth) return;
-    const plate = (r['Truck Plate']||r['Plate']||'').trim();
+    const plate = normalizePlate((r['Truck Plate']||r['Plate']||'').trim());
     if (!vehicleStats[plate]) return;
     vehicleStats[plate].maint += parseAmount(r['cost']||r['Amount']||0);
   });
@@ -9670,7 +9691,7 @@ function renderFHVehicleCards() {
     const lPer100 = v.kmDriven > 0 ? (v.liters / v.kmDriven) * 100 : 0;
     return `<div class="kpi-card" style="padding:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-weight:700;font-size:13px">${v.plate}</div>
+        <div style="font-weight:700;font-size:13px">${displayPlate(v.plate)}</div>
         <span class="badge ${badgeMap[v.type]||'bg'}" style="font-size:8px">${v.type}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px">
