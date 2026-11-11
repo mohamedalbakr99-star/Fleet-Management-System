@@ -1379,9 +1379,9 @@ html.auth-locked body{overflow:hidden}
         <div style="font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Month:</div>
         <select class="form-select" id="hist-month-sel" onchange="renderHistorical()" style="padding:5px 10px;font-size:12px;font-weight:600"><option value="all">All Months</option></select>
         <div style="flex:1"></div>
-        <button class="btn btn-ghost btn-sm" onclick="exportHistoricalExcel()">
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['hist-monthly-tbody','hist-dest-tbody','hist-comp-tbody','hist-trips-tbody'],'Historical Overview')" title="Download every table on this page as Excel">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Export Excel
+          Excel · All tables
         </button>
       </div>
 
@@ -1438,6 +1438,8 @@ html.auth-locked body{overflow:hidden}
           <div style="width:1px;height:18px;background:var(--border)"></div>
           <button class="btn btn-primary btn-sm" id="hrtab-yes" onclick="setHistRentalTab(true)">+ Rental</button>
           <button class="btn btn-ghost btn-sm" id="hrtab-no" onclick="setHistRentalTab(false)">- Rental</button>
+          <div style="width:1px;height:18px;background:var(--border)"></div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['hist-monthly-tbody'],'Monthly Summary')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
         </div>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -1565,7 +1567,7 @@ html.auth-locked body{overflow:hidden}
         <div style="display:flex;gap:6px">
           <select class="form-select" id="hdest-month" onchange="renderHistDest()" style="padding:3px 8px;font-size:10px"><option value="all">All Months</option><option value="2026-01">Jan 2026</option><option value="2026-02">Feb 2026</option><option value="2026-03">Mar 2026</option><option value="2026-04">Apr 2026</option><option value="2026-05">May 2026</option><option value="2026-06">Jun 2026</option></select>
           <select class="form-select" id="hdest-dest" onchange="renderHistDest()" style="padding:3px 8px;font-size:10px"><option value="">All Destinations</option><option>Alhasa</option><option>Dammam</option><option>Jeddah</option><option>Jubail</option><option>Qassim Province</option><option>Riyadh</option></select>
-          <button class="btn btn-ghost btn-sm" onclick="exportHistDest()">📥 Export</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['hist-dest-tbody'],'Destinations')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
         </div>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -1623,7 +1625,7 @@ html.auth-locked body{overflow:hidden}
           <select class="form-select" id="hcomp-month" onchange="renderHistComp()" style="padding:3px 8px;font-size:10px"><option value="all">All Months</option><option value="2026-01">Jan 2026</option><option value="2026-02">Feb 2026</option><option value="2026-03">Mar 2026</option><option value="2026-04">Apr 2026</option><option value="2026-05">May 2026</option><option value="2026-06">Jun 2026</option></select>
           <select class="form-select" id="hcomp-company" onchange="renderHistComp()" style="padding:3px 8px;font-size:10px"><option value="">All Companies</option><option>Afaq Al Nama</option><option>Ajex</option><option>NTC</option><option>Nawaqel Al khalij</option><option>TSB 2096</option><option>VRB 4654</option></select>
           <select class="form-select" id="hcomp-dest" onchange="renderHistComp()" style="padding:3px 8px;font-size:10px"><option value="">All Destinations</option><option>Alhasa</option><option>Dammam</option><option>Jeddah</option><option>Jubail</option><option>Qassim Province</option><option>Riyadh</option></select>
-          <button class="btn btn-ghost btn-sm" onclick="exportHistComp()">📥 Export</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['hist-comp-tbody'],'Companies')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
         </div>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -1696,7 +1698,7 @@ html.auth-locked body{overflow:hidden}
         <input type="date" id="htrip-from" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderHistTrips()">
         <span style="color:var(--text3);font-size:10px">to</span>
         <input type="date" id="htrip-to" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderHistTrips()">
-        <button class="btn btn-ghost btn-sm" onclick="exportHistTrips()">📥 Export</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['hist-trips-tbody'],'Trips')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -4270,7 +4272,7 @@ html.auth-locked body{overflow:hidden}
           <option value="5">Top 5</option>
           <option value="10">Top 10</option>
         </select>
-        <button class="btn btn-ghost btn-sm" onclick="exportFleetHist()">📥 Export</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['fleet-hist-tbody'],'Fleet Performance')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
         <table>
@@ -4579,7 +4581,7 @@ html.auth-locked body{overflow:hidden}
           <select class="form-select" id="fh-fuel-plate" onchange="renderFHFuelLog()" style="padding:5px 8px;font-size:11px"><option value="">Select vehicle...</option><option value="ALL">All Vehicles</option><option value="RRB 3498">RRB 3498</option><option value="VRB 4654">VRB 4654</option><option value="TSB 2096">TSB 2096</option><option value="GZA 1973">GZA 1973</option><option value="EDA 4916">EDA 4916</option><option value="TSA 5955">TSA 5955</option><option value="LSA 1134">LSA 1134</option><option value="TSA 5630">TSA 5630</option><option value="XSA 6961">XSA 6961</option><option value="EDA 4919">EDA 4919</option><option value="HSA 3325">HSA 3325</option><option value="HSA 3326">HSA 3326</option><option value="XSA 6962">XSA 6962</option><option value="HAS 3324">HAS 3324</option><option value="TSA 5821">TSA 5821</option><option value="TSA 5820">TSA 5820</option><option value="KGA 8879">KGA 8879</option><option value="KBB 3497">KBB 3497</option><option value="TSA 5694">TSA 5694</option><option value="TSB 4800">TSB 4800</option><option value="HSA 3238">HSA 3238</option><option value="TSA 5693">TSA 5693</option><option value="TSA 5700">TSA 5700</option><option value="TSA 5601">TSA 5601</option><option value="KSB 3325">KSB 3325</option></select>
           <input type="date" id="fh-fuel-from" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFHFuelLog()">
           <input type="date" id="fh-fuel-to" class="form-input" style="padding:5px 8px;font-size:11px;width:130px" onchange="renderFHFuelLog()">
-          <button class="btn btn-ghost btn-sm" onclick="exportFHFuel()">📥 Export</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['fh-fuel-tbody'],'Fuel Log')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
         </div>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
@@ -4609,7 +4611,7 @@ html.auth-locked body{overflow:hidden}
         <select class="form-select" id="fh-maint-month" onchange="renderFleetMaintDetails()" style="padding:5px 8px;font-size:11px">
           <option value="">— Select Month —</option>
         </select>
-        <button class="btn btn-ghost btn-sm" onclick="exportFleetMaint()">📥 Export</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['fleet-maint-tbody'],'Maintenance')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -4630,7 +4632,7 @@ html.auth-locked body{overflow:hidden}
         </select>
         <select class="form-select" id="rh-company" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px"><option value="">All Companies</option><option>Afaq Al Nama</option><option>Ajex</option><option>NTC</option><option>Nawaqel Al khalij</option><option>TSB 2096</option><option>VRB 4654</option></select>
         <select class="form-select" id="rh-dest" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px"><option value="">All Destinations</option><option>Alhasa</option><option>Dammam</option><option>Jeddah</option><option>Jubail</option><option>Qassim Province</option><option>Riyadh</option></select>
-        <button class="btn btn-ghost btn-sm" onclick="exportRentalHist()">📥 Export</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['rh-company-tbody','rh-dest-tbody','rh-trips-tbody'],'Rental Historical')" title="Download the rows shown (after filters) as Excel">📥 Excel · All tables</button>
       </div>
 
       <!-- KPI Cards -->
@@ -4688,7 +4690,10 @@ html.auth-locked body{overflow:hidden}
       </div>
 
       <!-- Company Analysis -->
-      <div class="sec-title">Company Analysis — Historical</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div class="sec-title">Company Analysis — Historical</div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['rh-company-tbody'],'Rental Companies')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
+      </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
         <table>
           <thead><tr>
@@ -4756,6 +4761,8 @@ html.auth-locked body{overflow:hidden}
         <select class="form-select" id="rh-dest-filter" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
           <option value="">All Destinations</option>
         </select>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['rh-dest-tbody'],'Rental Destinations')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
       </div>
       <div class="tbl-wrap" style="margin-bottom:14px">
         <table>
@@ -4806,6 +4813,8 @@ html.auth-locked body{overflow:hidden}
         </select>
         <input type="date" id="rh-trips-from" class="form-input" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
         <input type="date" id="rh-trips-to" class="form-input" onchange="renderRentalHist()" style="padding:5px 8px;font-size:11px">
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['rh-trips-tbody'],'Rental Trips')" title="Download the rows shown (after filters) as Excel">📥 Excel</button>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -8558,6 +8567,14 @@ function renderRHTLineChart() {
   pts.forEach((p,i)=>{
     const lbl=metric==='trips'?p.v.toLocaleString():fmt(p.v);
     dots+=`<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="var(--bg)" stroke-width="1.5"><title>${labels[i]}: ${lbl}</title></circle>`;
+    // value label above the point (thinned when there are many months)
+    const vStep=Math.ceil(n/12);
+    if(n<=12||i%vStep===0||i===n-1){
+      const vTxt=metric==='trips'?Math.round(p.v).toLocaleString():fmtShort(p.v);
+      const vy=p.y-8<PT+2?p.y+14:p.y-8;
+      const anc=n>1&&i===0?'start':n>1&&i===n-1?'end':'middle', vx=anc==='start'?p.x-3:anc==='end'?p.x+3:p.x;
+      dots+=`<text x="${vx}" y="${vy}" font-size="8.5" font-weight="700" fill="${color}" text-anchor="${anc}">${vTxt}</text>`;
+    }
   });
 
   const uid='rht'+Date.now();
@@ -8687,7 +8704,7 @@ function renderFHTLineChart() {
   let circles='';
   points.forEach((p,i)=>{
     circles+=`<circle cx="${xPos[i].toFixed(1)}" cy="${yPos[i].toFixed(1)}" r="4.5" fill="${cfg.color}" stroke="white" stroke-width="1.5" style="cursor:pointer"><title>${p.label}: ${cfg.fmt(p.value)} ${cfg.unit}</title></circle>`;
-    if(n<=8){const ly=yPos[i]-9;circles+=`<text x="${xPos[i].toFixed(1)}" y="${ly<padT+4?yPos[i]+16:ly}" font-size="8.5" fill="${cfg.color}" font-weight="600" text-anchor="middle">${cfg.fmt(p.value)}</text>`;}
+    if(n<=12||i%Math.ceil(n/12)===0||i===n-1){const ly=yPos[i]-9;circles+=`<text x="${xPos[i].toFixed(1)}" y="${ly<padT+4?yPos[i]+16:ly}" font-size="8.5" fill="${cfg.color}" font-weight="600" text-anchor="middle">${cfg.fmt(p.value)}</text>`;}
   });
   let xLabels='';
   points.forEach((p,i)=>{if(!(n>12&&i%2!==0))xLabels+=`<text x="${xPos[i].toFixed(1)}" y="${H-8}" font-size="9" fill="#94a3b8" text-anchor="middle">${p.label}</text>`;});
@@ -10562,6 +10579,149 @@ function exportMaintLog() {
 </script><div id="scroll-up" class="scroll-up" title="Scroll to top" style="opacity: 0.95; pointer-events: auto;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
 
 <div class="scroll-hint" title="Scroll to bottom" style="opacity: 0.7;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+<script>
+/* ════════════════════════════════════════════════════════════
+   EXCEL EXPORT — downloads exactly the rows shown in a table
+   (after its filters / search / sort / Top N), one sheet per table,
+   plus a "Filters" sheet that records what was selected.
+   ════════════════════════════════════════════════════════════ */
+const ZFI_XLSX_SRC='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+
+function zfiLoadXLSX(){
+  if(window.XLSX)return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=ZFI_XLSX_SRC;
+    s.onload=res;s.onerror=()=>rej(new Error('Excel library could not load'));
+    document.head.appendChild(s);
+  });
+}
+
+function zfiText(el){return (el.innerText||el.textContent||'').replace(/\s+/g,' ').trim()}
+// original wording (not the CSS UPPERCASE) and without sort arrows
+function zfiLabel(el){return (el.textContent||'').replace(/[↕↑↓▲▼⇅⇵]/g,'').replace(/\s+/g,' ').trim()}
+// Excel day number (exact, no timezone drift)
+const zfiSerial=(y,mo,d)=>(Date.UTC(y,mo,d)-Date.UTC(1899,11,30))/86400000;
+const ZFI_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+// each cell, repeated as blanks for colspan so columns stay aligned
+function zfiRowCells(tr,fn){const out=[];[...tr.cells].forEach(c=>{out.push(fn(c));for(let i=1;i<c.colSpan;i++)out.push({v:''})});return out}
+
+// "SAR 12,345" → 12345 · "8.5%" → 0.085 (formatted as %) · anything else stays text
+function zfiCell(td){
+  const t=zfiText(td);
+  if(t===''||t==='—'||t==='-')return {v:''};
+  const core=t.replace(/^(SAR|SR)\s*/i,'').replace(/\s*(SAR|SR)$/i,'').trim();
+  if(/^[+-]?\d[\d,]*(\.\d+)?$/.test(core)){
+    const v=parseFloat(core.replace(/,/g,''));
+    return {v,z:Number.isInteger(v)?'#,##0':'#,##0.00'};
+  }
+  if(/^[+-]?\d[\d,]*(\.\d+)?\s*%$/.test(core)){
+    return {v:parseFloat(core.replace(/[,%\s]/g,''))/100,z:'0.0%'};
+  }
+  let m=t.match(/^(\d{1,2})[ -]([A-Za-z]{3})[a-z]*[ -](\d{4})$/);           // 06 Jul 2025
+  if(m&&ZFI_MON[m[2].toLowerCase()]!==undefined)return {v:zfiSerial(+m[3],ZFI_MON[m[2].toLowerCase()],+m[1]),z:'dd mmm yyyy'};
+  m=t.match(/^(\d{4})-(\d{2})-(\d{2})$/);                                   // 2025-07-06
+  if(m)return {v:zfiSerial(+m[1],+m[2]-1,+m[3]),z:'dd mmm yyyy'};
+  return {v:t};
+}
+
+function zfiRowHidden(tr){
+  return tr.hidden||tr.style.display==='none'||getComputedStyle(tr).display==='none';
+}
+
+function zfiTableData(tbodyId){
+  const tb=document.getElementById(tbodyId);if(!tb)return null;
+  const table=tb.closest('table');
+  const head=table&&table.tHead&&table.tHead.rows.length?table.tHead.rows[table.tHead.rows.length-1]:null;
+  const headers=head?zfiRowCells(head,c=>({v:zfiLabel(c)})).map(c=>c.v):[];
+  const rows=[];
+  [...tb.rows].forEach(tr=>{
+    if(zfiRowHidden(tr))return;
+    const cells=[...tr.cells];
+    if(cells.length===1&&cells[0].colSpan>1)return;        // "No data" / placeholder rows
+    rows.push(zfiRowCells(tr,zfiCell));
+  });
+  if(table&&table.tFoot)[...table.tFoot.rows].forEach(tr=>{if(!zfiRowHidden(tr))rows.push(zfiRowCells(tr,zfiCell))});
+  return {headers,rows,table};
+}
+
+// Filters that apply to a table: the page's top filter row + the controls in the table's own section
+function zfiFiltersFor(table){
+  const out=[];const seen=new Set();
+  const label=el=>{
+    const prev=el.previousElementSibling;
+    if(prev&&!/^(SELECT|INPUT|BUTTON)$/.test(prev.tagName)){const t=zfiText(prev).replace(/:$/,'');if(t&&t.length<30)return t}
+    if(el.tagName==='SELECT'&&el.options.length)return zfiText(el.options[0]).replace(/^(All|Select)\s+/i,'').replace(/\.+$/,'')||el.id;
+    return el.placeholder?el.placeholder.replace(/^🔍\s*/,'').replace(/\.+$/,''):(el.type==='date'?(/from/i.test(el.id)?'From':/to/i.test(el.id)?'To':'Date'):el.id);
+  };
+  const take=scope=>{
+    if(!scope)return;
+    scope.querySelectorAll('select,input').forEach(el=>{
+      if(seen.has(el)||el.closest('table'))return;seen.add(el);
+      if(el.tagName==='SELECT'){
+        if(el.selectedIndex<=0)return;
+        out.push([label(el),zfiText(el.options[el.selectedIndex])]);
+      }else if(el.value){out.push([label(el),el.value])}
+    });
+    scope.querySelectorAll('button.btn-primary').forEach(b=>{if(!seen.has(b)){seen.add(b);out.push(['View',zfiText(b)])}});
+  };
+  const wrap=table.closest('.tbl-wrap')||table.parentElement;
+  const page=table.closest('.page');
+  if(page){                                                   // page-level filter row (first block holding a select)
+    const top=[...page.children].find(c=>c.querySelector&&c.querySelector('select'));
+    if(top&&!top.contains(wrap))take(top);
+  }
+  let sib=wrap.previousElementSibling,steps=0;              // this table's own header / filter rows
+  while(sib&&steps<4){
+    take(sib);
+    if(sib.classList.contains('sec-title')||sib.classList.contains('tbl-wrap')||sib.querySelector('.sec-title,.chart-title'))break;
+    sib=sib.previousElementSibling;steps++;
+  }
+  return out;
+}
+
+function zfiSheet(headers,rows){
+  const aoa=[headers.length?headers:[],...rows.map(r=>r.map(c=>c.v))];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  rows.forEach((r,ri)=>r.forEach((c,ci)=>{
+    if(c.z){const a=XLSX.utils.encode_cell({r:ri+1,c:ci});if(ws[a]){if(!(c.v instanceof Date))ws[a].t='n';ws[a].z=c.z}}
+  }));
+  const cols=Math.max(headers.length,...rows.map(r=>r.length),0);
+  ws['!cols']=Array.from({length:cols},(_,i)=>{
+    const w=Math.max(String(headers[i]||'').length,...rows.map(r=>r[i]&&r[i].v instanceof Date?11:String(r[i]&&r[i].v!==undefined?r[i].v:'').length));
+    return {wch:Math.min(Math.max(w+2,8),45)};
+  });
+  if(headers.length)ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length,1),c:Math.max(cols-1,0)}})};
+  return ws;
+}
+
+async function zfiExportTables(tbodyIds,name){
+  try{await zfiLoadXLSX()}catch(e){alert('Excel export needs an internet connection. Try again.');return}
+  const wb=XLSX.utils.book_new();
+  const filters=[];let total=0;const used=new Set();
+  tbodyIds.forEach(id=>{
+    const d=zfiTableData(id);if(!d)return;
+    // sheet name = the table's section title, else the button's name
+    let title='';
+    const wrap=d.table.closest('.tbl-wrap');let s=wrap&&wrap.previousElementSibling,k=0;
+    while(s&&k<4&&!title){const t=s.matches('.sec-title,.chart-title')?s:s.querySelector&&s.querySelector('.sec-title,.chart-title');if(t)title=zfiLabel(t);s=s.previousElementSibling;k++}
+    let sheet=(tbodyIds.length===1?name:(title||id)).replace(/[\\\/\?\*\[\]:]/g,' ').replace(/[^\x20-\x7E؀-ۿ]/g,'').replace(/\s+/g,' ').trim().slice(0,31)||'Sheet';
+    let base=sheet,n=2;while(used.has(sheet))sheet=(base.slice(0,28)+' '+n++);used.add(sheet);
+    XLSX.utils.book_append_sheet(wb,zfiSheet(d.headers,d.rows),sheet);
+    total+=d.rows.length;
+    zfiFiltersFor(d.table).forEach(f=>filters.push([sheet,f[0],f[1]]));
+  });
+  if(!wb.SheetNames.length){alert('Nothing to export yet. Wait for the data to load.');return}
+  const user=window.zfiAuth&&window.zfiAuth.user;
+  const info=[['Report',name],['Exported',new Date().toLocaleString('en-GB')],['Exported by',user?(user.name||user.username):''],['Rows',total],[],
+              ['Table','Filter','Value'],...(filters.length?filters:[['','No filters','All data']])];
+  const wsI=XLSX.utils.aoa_to_sheet(info);wsI['!cols']=[{wch:22},{wch:22},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,wsI,'Filters');
+  const d=new Date(),stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  XLSX.writeFile(wb,'ZFI_'+name.replace(/[^A-Za-z0-9]+/g,'_')+'_'+stamp+'.xlsx');
+}
+
+</script>
+
 <!-- ═══ ZFI AUTH: scripts ═══ -->
 <script>
 window.zfiBootAuthUI=function(root){
