@@ -634,7 +634,7 @@ html.auth-locked body{overflow:hidden}
             </div>
             <div class="rem-row">
               <div class="tog" id="remTog" onclick="zfiAuthUI.toggleRem()" role="switch" aria-checked="false" tabindex="0"><div class="tog-thumb"></div></div>
-              <span class="rem-label">Remember me</span>
+              <span class="rem-label">Keep me signed in for 24 hours</span>
             </div>
             <button class="btn btn-login" id="btnIn" onclick="zfiAuthUI.doLogin()">
               <span class="btn-txt" id="inTxt">Sign In →</span>
@@ -11120,7 +11120,9 @@ root.addEventListener('keydown',e=>{
   e.preventDefault();$('loginForm').hidden?doRegister():doLogin();
 });
 
-return {start,stop,reset,showLogin,showRegister,togglePwd,toggleRem,checkStr,doLogin,doRegister};
+function notice(m){showOk(m)}
+
+return {start,stop,reset,notice,showLogin,showRegister,togglePwd,toggleRem,checkStr,doLogin,doRegister};
 
 };
 </script>
@@ -11132,6 +11134,7 @@ return {start,stop,reset,showLogin,showRegister,togglePwd,toggleRem,checkStr,doL
 (function(){
   const AUTH_API='https://script.google.com/macros/s/AKfycbxFBILhsrHoeQFpQ3xYTXlTn2y6pwCeVU4Qa4f-xZGti1o7I0ATZ8DKsXrEsv_o_-x-/exec';
   const SESSION_KEY='zfi_session';
+  const SESSION_TTL=24*60*60*1000;   // every sign-in ends automatically after 24 hours
   const LIBS=[
     'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
@@ -11143,7 +11146,12 @@ return {start,stop,reset,showLogin,showRegister,togglePwd,toggleRem,checkStr,doL
 
   /* ── session storage ── */
   const store={
-    read(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'null')}catch(e){return null}},
+    read(){
+      let s=null;
+      try{s=JSON.parse(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'null')}catch(e){}
+      if(s&&!(s.expires_at>Date.now())){this.clear();return null}   // expired or no expiry → sign in again
+      return s;
+    },
     save(s){try{const j=JSON.stringify(s);
       if(s.remember){localStorage.setItem(SESSION_KEY,j);sessionStorage.removeItem(SESSION_KEY)}
       else{sessionStorage.setItem(SESSION_KEY,j);localStorage.removeItem(SESSION_KEY)}}catch(e){}},
@@ -11224,17 +11232,26 @@ return {start,stop,reset,showLogin,showRegister,togglePwd,toggleRem,checkStr,doL
     const r=await api({action:'login',username,password,device:navigator.userAgent});
     if(!r.ok)return r;
     const s={username:r.user.username,name:r.user.name,role:r.user.role,pages:r.user.pages,
-             visit_row:r.visit_row,login_time:new Date().toISOString(),remember:!!remember};
+             visit_row:r.visit_row,login_time:new Date().toISOString(),remember:!!remember,
+             expires_at:Date.now()+SESSION_TTL};
     store.save(s);viewed.clear();
     setTimeout(()=>enter(s,true),900);
     return r;
   }
   function register(d){return api(Object.assign({action:'register'},d))}
-  function logout(){
+  async function logout(notice){
     if(session&&session.visit_row)beacon({action:'logout',visit_row:session.visit_row,pages_viewed:[...viewed].join(', ')});
     session=null;store.clear();viewed.clear();clearUser();
-    showLoginScreen(false);
+    await showLoginScreen(false);
+    if(notice&&ui&&ui.notice)ui.notice(notice);
   }
+
+  /* ── 24-hour limit, checked locally every minute (no server requests) ── */
+  function checkExpiry(){
+    if(session&&!(session.expires_at>Date.now()))logout('Your session ended after 24 hours. Sign in again to continue.');
+  }
+  setInterval(checkExpiry,60*1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkExpiry()});
   async function revalidate(s){
     try{
       const r=await api({action:'log_visit',username:s.username,name:s.name,device:navigator.userAgent});
@@ -11275,7 +11292,7 @@ return {start,stop,reset,showLogin,showRegister,togglePwd,toggleRem,checkStr,doL
   checkVersion();setInterval(checkVersion,5*60*1000);
 
   window.zfiAuth={login,register,logout,get user(){return session}};
-  window.zfiLogout=logout;
+  window.zfiLogout=()=>logout();
 
   /* ── start ── */
   const saved=store.read();
