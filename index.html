@@ -10765,7 +10765,7 @@ function buildTrailer(){
   const plain=new THREE.MeshStandardMaterial({color:0xc4ccd6,metalness:.25,roughness:.5});
   const dark=new THREE.MeshStandardMaterial({color:0x1a1f29,metalness:.5,roughness:.6});
   const chrome=new THREE.MeshStandardMaterial({color:0xe5e9f0,metalness:1,roughness:.18});
-  const tireM=new THREE.MeshStandardMaterial({color:0x111318,roughness:.92});
+  const tireM=new THREE.MeshStandardMaterial({color:0x050608,roughness:1,metalness:0,envMapIntensity:.05});
   // faces: +x,-x,+y,-y,+z(rear),-z(front)
   const body=new THREE.Mesh(new THREE.BoxGeometry(Wd,Hh,L),[side,side,plain,dark,rear,plain]);
   body.position.set(0,Y0+Hh/2,Z0+L/2);body.castShadow=true;g.add(body);
@@ -10786,7 +10786,7 @@ function buildTrailer(){
   [1.0,.7,-.7,-1.0].forEach(x=>{const t=box(.18,.18,.04,red);t.position.set(x,Y0+.18,Z0+L+.02);g.add(t)});
   for(let z=Z0+.6;z<Z0+L;z+=2.4)[Wd/2+.015,-(Wd/2+.015)].forEach(x=>{const m=box(.02,.07,.12,amber);m.position.set(x,Y0+Hh-.12,z);g.add(m)});
   [.9,-.9].forEach(x=>{const m=box(.12,.07,.02,red);m.position.set(x,Y0+Hh-.1,Z0+L+.02);g.add(m)});
-  const glow=new THREE.PointLight(0xff3344,1.2,7);glow.position.set(0,1.2,Z0+L+1);g.add(glow);
+  const glow=new THREE.PointLight(0xff3344,.9,4);glow.position.set(0,1.8,Z0+L+.7);g.add(glow);
   return g;
 }
 
