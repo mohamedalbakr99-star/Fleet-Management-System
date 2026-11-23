@@ -4288,7 +4288,7 @@ html.auth-locked body{overflow:hidden}
           <button id="fhcm-fuel" onclick="fhcMetric('fuel')" class="btn btn-ghost btn-sm">💰 Fuel cost</button>
           <button id="fhcm-maint" onclick="fhcMetric('maint')" class="btn btn-ghost btn-sm">🔧 Maintenance</button>
           <button id="fhcm-total" onclick="fhcMetric('total')" class="btn btn-ghost btn-sm">📊 Total cost</button>
-          <button id="fhcm-costkm" onclick="fhcMetric('costkm')" class="btn btn-ghost btn-sm">💵 Cost per km</button>
+          <button id="fhcm-costkm" onclick="fhcMetric('costkm')" class="btn btn-ghost btn-sm">💵 Cost per 100 km</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
           <select class="form-select" id="fhc-range" onchange="fhcRange(this.value)" style="padding:4px 8px;font-size:11px">
@@ -4300,7 +4300,7 @@ html.auth-locked body{overflow:hidden}
         </div>
         <div id="fhc-chart" style="width:100%"></div>
         <div id="fhc-legend"></div>
-        <div style="font-size:10px;color:var(--text3);margin-top:6px">KM per month = highest − lowest odometer reading in that month (same as the cards above). Months with fewer than 2 readings show a gap. Readings flagged ⚠️ are ignored.</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px">KM per month = highest − lowest odometer reading in that month (same as the cards above). Months with fewer than 2 readings show a gap.</div>
         <div style="margin-top:8px"><a href="#" onclick="var w=document.getElementById('fhc-tbl');w.style.display=w.style.display==='none'?'':'none';return false" style="font-size:11px;color:var(--blue)">▾ Show / hide data table</a></div>
         <div class="tbl-wrap" id="fhc-tbl" style="display:none;margin:8px 0 0;overflow-x:auto"><table><thead id="fhc-thead"></thead><tbody id="fhc-tbody"></tbody></table></div>
       </div>
@@ -4673,6 +4673,23 @@ html.auth-locked body{overflow:hidden}
             <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Select a vehicle above</td></tr>
           </tbody>
           <tfoot id="fleet-maint-totals" style="background:var(--bg3)"></tfoot>
+        </table>
+      </div>
+
+      <!-- ═══ v2: Idle Vehicles report ═══ -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase">Idle Vehicles — no fuel &amp; no maintenance</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <select class="form-select" id="idle-days" onchange="idleDays(this.value)" style="padding:5px 8px;font-size:11px"><option value="7">7 days or more</option><option value="15">15 days or more</option><option value="30">30 days or more</option></select>
+          <select class="form-select" id="idle-type" onchange="idleType(this.value)" style="padding:5px 8px;font-size:11px"><option value="">All types</option><option value="Local Trucks">Local Trucks</option><option value="Shuttling Trucks">Shuttling Trucks</option><option value="ZF Employee Vehicles">ZF Employee Vehicles</option></select>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['idle-tbody'],'Idle Vehicles')" title="Download the idle vehicles table as Excel">📥 Excel</button>
+        </div>
+      </div>
+      <div id="idle-summary" style="font-size:11px;color:var(--text3);margin-bottom:6px"></div>
+      <div class="tbl-wrap" style="margin-bottom:14px">
+        <table>
+          <thead><tr><th>Vehicle</th><th>Type</th><th>Last Fuel</th><th>Days Since Fuel</th><th>Last Maintenance</th><th>Days Since Maint.</th><th>Idle Days</th></tr></thead>
+          <tbody id="idle-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -7919,7 +7936,7 @@ function renderFHFuelLog() {
       <td style="font-weight:600">${displayPlate(r.plate)}</td>
       <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.prevKm?r.prevKm.toLocaleString():'—'}</td>
-      <td style="font-weight:600">${r.kmWhy?`<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} — ignored in calculations" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span>`:(r.km?r.km.toLocaleString():'—')}</td>
+      <td style="font-weight:600">${r.kmWhy?`<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} (alarm only — still used in the calculations)" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span><div style="font-size:9px;font-weight:400;color:var(--amber);white-space:normal;min-width:170px;max-width:300px;line-height:1.35">${String(r.kmWhy).replace(/</g,'&lt;').replace(/ • /g,'<br>')}</div>`:(r.km?r.km.toLocaleString():'—')}</td>
       <td style="color:${r.driven>0?'var(--green)':'var(--text3)'}">${r.driven?r.driven.toLocaleString():'—'}</td>
       <td>${r.liters?Math.round(r.liters):'—'}</td>
       <td style="color:var(--blue)">${r.cost?fmt(r.cost):'—'}</td>
@@ -9685,7 +9702,7 @@ function renderFuelTable() {
       <td><span class="badge ${typeBadge[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.city}</td>
       <td>${r.prevKm ? r.prevKm.toLocaleString() : '—'}</td>
-      <td style="font-weight:600">${r.kmWhy ? `<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} — ignored in calculations" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span>` : (r.km ? r.km.toLocaleString() : '—')}</td>
+      <td style="font-weight:600">${r.kmWhy ? `<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} (alarm only — still used in the calculations)" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span><div style="font-size:9px;font-weight:400;color:var(--amber);white-space:normal;min-width:170px;max-width:300px;line-height:1.35">${String(r.kmWhy).replace(/</g,'&lt;').replace(/ • /g,'<br>')}</div>` : (r.km ? r.km.toLocaleString() : '—')}</td>
       <td style="color:${r.driven>0?'var(--green)':'var(--text3)'};font-weight:600">${r.driven ? r.driven.toLocaleString() : '—'}</td>
       <td>${r.liters ? Math.round(r.liters) : '—'}</td>
       <td style="color:var(--blue);font-weight:600">${r.cost ? fmt(r.cost) : '—'}</td>
@@ -10298,18 +10315,14 @@ function filterMaintPlate(val) {
    1) Odometer sanity check      2) Vehicle comparison   3) Company comparison
    ════════════════════════════════════════════════════════════════ */
 
-/* ── 1) ODOMETER SANITY CHECK ─────────────────────────────────────
-   A reading is flagged when it is out of line with the readings before
-   and after it for the same vehicle. Flagged readings are NEVER edited in
-   the Google Sheet; they are only ignored in memory, shown with a ⚠️ in the
-   fuel tables, and listed in the banner on the Fleet Historical page.
-   Limits below are editable: allowed jump = perDay × days since last reading + slack. */
-const ZFI_KM_RULES = {
-  'Local Trucks':         { perDay: 700,  slack: 500 },
-  'Shuttling Trucks':     { perDay: 1200, slack: 600 },
-  'ZF Employee Vehicles': { perDay: 600,  slack: 400 },
-  _default:               { perDay: 800,  slack: 500 }
-};
+/* ── 1) FUEL ALARMS (review list only — NOTHING is excluded or changed) ──
+   Every rule only raises an alarm. All numbers in the dashboard stay exactly
+   as entered in the sheet; you check the fill and fix it in the sheet yourself.
+     • km    : odometer lower than the vehicle's previous reading
+     • liters: liters above the vehicle's average fill by more than litersAbove
+     • kml   : km/L over the last two fills off the vehicle's typical (median) value by more than kmlDev
+   Vehicles with fewer than minFills fills are skipped by the liters / km-L rules. */
+const ZFI_FUEL_ALARM = { litersAbove: 0.5, kmlDev: 0.4, minFills: 4 };
 const ZFI_KM_KEYS = ['عداد الكيلومتر','KM','Odometer','odometer','الكيلومتر','عداد'];
 window.ZFI_KM_FLAGS = [];
 
@@ -10318,71 +10331,71 @@ function zfiSetKmCheck(on){ try{ localStorage.setItem('zfi_km_check', on?'on':'o
 
 function zfiFlagFuelKm(){
   const rows = STATE.fuel || [];
-  // 1) put back anything flagged by a previous run (keeps this function idempotent)
+  // clear tags from a previous run (and from older builds that blanked readings)
   rows.forEach(r=>{
-    if(r && r._kmKeys){
-      for(const k in r._kmKeys) r[k] = r._kmKeys[k];
-      delete r._kmKeys; delete r._kmRaw; delete r._kmWhy;
-    }
+    if(!r) return;
+    if(r._kmKeys){ for(const k in r._kmKeys) r[k] = r._kmKeys[k]; delete r._kmKeys; }
+    delete r._kmRaw; delete r._kmWhy;
   });
   window.ZFI_KM_FLAGS = [];
   if(!zfiKmEnabled()) return;
+  const A = ZFI_FUEL_ALARM, n0 = x=>Math.round(x).toLocaleString('en-US');
 
-  // 2) group readings per vehicle
   const groups = {};
   rows.forEach((r,idx)=>{
     if(!r) return;
-    let key = null;
+    let key=null;
     for(const k of ZFI_KM_KEYS){ if(r[k]!==undefined && r[k]!==null && String(r[k]).trim()!==''){ key=k; break; } }
-    if(!key) return;
-    const km = parseAmount(r[key]);
-    if(!(km>0)) return;
+    const km = key ? parseAmount(r[key]) : 0;
     const date = parseDate(r['التاريخ']||r['Date']||'');
     if(!date || isNaN(date)) return;
     const rawPlate = String(r['المركبة']||r['Plate']||'').trim();
     const p = normalizePlate(rawPlate).replace(/\s+/g,' ');
     if(!p) return;
-    (groups[p] = groups[p] || []).push({r, km, t:date.getTime(), idx, key, rawPlate, date});
+    (groups[p] = groups[p] || []).push({ r, km, key, t:date.getTime(), idx, date, rawPlate,
+      L: parseAmount(r['عدد اللترات']||r['Liters']),
+      cost: parseAmount(r['التكلفة']||r['Cost']) });
   });
 
-  const days  = (a,b)=>Math.max(1, Math.round(Math.abs(b.t-a.t)/86400000));
-  const limit = (a,b,rule)=>rule.perDay*days(a,b)+rule.slack;
-  const fmtN  = n=>Math.round(n).toLocaleString('en-US');
+  const byRow = new Map();   // row -> {c, reasons[]}
+  const add = (c, why)=>{ let e=byRow.get(c.r); if(!e){ e={c,reasons:[]}; byRow.set(c.r,e); } if(!e.reasons.includes(why)) e.reasons.push(why); };
 
   Object.keys(groups).forEach(p=>{
-    const seq = groups[p].sort((a,b)=>a.t-b.t || a.idx-b.idx);
-    if(seq.length<2) return;
-    const rule = ZFI_KM_RULES[plateType(seq[0].rawPlate)] || ZFI_KM_RULES._default;
-    let prev = null;
-    for(let i=0;i<seq.length;i++){
-      const c = seq[i], nx = seq[i+1]||null, nx2 = seq[i+2]||null;
-      let why = null;
-      if(prev){
-        const d = c.km - prev.km;
-        if(d > limit(prev,c,rule)){
-          if(!nx) why = '+'+fmtN(d)+' km vs previous reading '+fmtN(prev.km)+' ('+days(prev,c)+' d) — latest reading, not confirmed';
-          else if(nx.km < c.km-50) why = '+'+fmtN(d)+' km vs previous reading '+fmtN(prev.km)+' ('+days(prev,c)+' d) — next reading ('+fmtN(nx.km)+') is much lower';
-        } else if(d < -50){
-          if(!nx) why = fmtN(-d)+' km LOWER than previous reading '+fmtN(prev.km)+' — latest reading';
-          else if(nx.km >= prev.km-50) why = fmtN(-d)+' km LOWER than previous reading '+fmtN(prev.km)+' — next reading ('+fmtN(nx.km)+') is back in line';
-        }
-      } else if(nx && nx2){
-        const d = c.km - nx.km;
-        const agree = nx2.km >= nx.km-50 && (nx2.km-nx.km) <= limit(nx,nx2,rule);
-        if(agree){
-          if(d > 50) why = 'first reading is '+fmtN(d)+' km ABOVE the next readings ('+fmtN(nx.km)+', '+fmtN(nx2.km)+')';
-          else if(-d > limit(c,nx,rule)) why = 'first reading is '+fmtN(-d)+' km BELOW the next readings ('+fmtN(nx.km)+', '+fmtN(nx2.km)+')';
-        }
-      }
-      if(why){
-        const r = c.r;
-        r._kmRaw = r[c.key]; r._kmWhy = why; r._kmKeys = {};
-        ZFI_KM_KEYS.forEach(k=>{ if(k in r){ r._kmKeys[k] = r[k]; r[k] = ''; } });
-        window.ZFI_KM_FLAGS.push({ plate:c.rawPlate, date:c.date, raw:c.km, why });
-      } else {
-        prev = c;
+    const seq = groups[p].sort((a,b)=>a.t-b.t || ((a.km>0&&b.km>0&&a.km!==b.km)?a.km-b.km:a.idx-b.idx));   // same day: order by odometer
+    // 1) odometer lower than the previous reading
+    const rd = seq.filter(c=>c.km>0);
+    for(let i=1;i<rd.length;i++){
+      if(rd[i].km < rd[i-1].km){
+        // if the reading before is itself the odd one (too high), blame that one
+        const prevIsSpike = i>=2 && rd[i].km >= rd[i-2].km && (i+1>=rd.length || rd[i+1].km >= rd[i].km);
+        if(prevIsSpike) add(rd[i-1], 'Odometer '+n0(rd[i-1].km)+' is higher than the readings after it ('+n0(rd[i].km)+')');
+        else add(rd[i], 'Odometer '+n0(rd[i].km)+' is LOWER than the previous reading '+n0(rd[i-1].km));
       }
     }
+    if(seq.length < A.minFills) return;
+    // 2) liters well above this vehicle's average fill
+    const lit = seq.filter(c=>c.L>0);
+    if(lit.length >= A.minFills){
+      const avgL = lit.reduce((a,c)=>a+c.L,0)/lit.length;
+      lit.forEach(c=>{ if(c.L > avgL*(1+A.litersAbove)) add(c, 'Liters '+n0(c.L)+' is '+Math.round((c.L/avgL-1)*100)+'% above this vehicle’s average fill ('+n0(avgL)+' L)'); });
+    }
+    // 3) km/L over the last two fills vs the vehicle's own average
+    // km/L of every two-fill window; the vehicle's typical value is the MEDIAN (one wrong reading can't skew it)
+    const wins = [];
+    for(let i=2;i<rd.length;i++){
+      const a=rd[i-2], b=rd[i-1], c=rd[i];
+      if(b.km>a.km && c.km>b.km && b.L>0 && c.L>0) wins.push({c, k:(c.km-a.km)/(b.L+c.L)});
+    }
+    if(wins.length >= A.minFills){
+      const ks = wins.map(w=>w.k).sort((x,y)=>x-y), m = ks.length>>1;
+      const avgK = ks.length%2 ? ks[m] : (ks[m-1]+ks[m])/2;
+      wins.forEach(w=>{ if(avgK>0 && Math.abs(w.k/avgK-1) > A.kmlDev) add(w.c, 'km/L over the last two fills = '+w.k.toFixed(2)+' vs this vehicle\u2019s typical '+avgK.toFixed(2)+' ('+(w.k>avgK?'+':'')+Math.round((w.k/avgK-1)*100)+'%)'); });
+    }
+  });
+
+  byRow.forEach(({c,reasons})=>{
+    c.r._kmRaw = c.key ? c.r[c.key] : ''; c.r._kmWhy = reasons.join(' • ');
+    window.ZFI_KM_FLAGS.push({ plate:c.rawPlate, date:c.date, raw:c.km, liters:c.L, cost:c.cost, why:reasons.join(' • '), reasons });
   });
   window.ZFI_KM_FLAGS.sort((a,b)=>b.date-a.date);
 }
@@ -10393,27 +10406,29 @@ function zfiRenderKmBanner(){
   const f = window.ZFI_KM_FLAGS || [];
   if(!zfiKmEnabled()){
     host.style.display = '';
-    host.innerHTML = '<div class="chart-card" style="padding:10px 14px;font-size:11px;color:var(--text3)">Odometer check is <b>OFF</b> — all readings are used as entered. <a href="#" onclick="zfiSetKmCheck(true);return false" style="color:var(--blue)">Turn on</a></div>';
+    host.innerHTML = '<div class="chart-card" style="padding:10px 14px;font-size:11px;color:var(--text3)">Fuel alarms are <b>OFF</b>. <a href="#" onclick="zfiSetKmCheck(true);return false" style="color:var(--blue)">Turn on</a></div>';
     return;
   }
   if(!f.length){ host.style.display='none'; host.innerHTML=''; return; }
   const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const rows = f.slice(0,40).map(x=>`<tr>
-      <td style="white-space:nowrap">${x.date.toISOString().slice(0,10)}</td>
-      <td style="font-weight:600;white-space:nowrap">${esc(displayPlate(normalizePlate(x.plate)))}</td>
-      <td style="color:var(--amber);font-weight:600">${Math.round(x.raw).toLocaleString('en-US')}</td>
-      <td style="color:var(--text2)">${esc(x.why)}</td></tr>`).join('');
+  const rows = f.slice(0,60).map(x=>`<tr style="vertical-align:top">
+      <td style="white-space:nowrap;padding:3px 8px 3px 0">${x.date.toISOString().slice(0,10)}</td>
+      <td style="font-weight:600;white-space:nowrap;padding:3px 8px">${esc(displayPlate(normalizePlate(x.plate)))}</td>
+      <td style="padding:3px 8px">${x.raw>0?Math.round(x.raw).toLocaleString('en-US'):'—'}</td>
+      <td style="padding:3px 8px">${x.liters>0?Math.round(x.liters):'—'}</td>
+      <td style="padding:3px 8px">${x.cost>0?Math.round(x.cost).toLocaleString('en-US'):'—'}</td>
+      <td style="color:var(--text2);padding:3px 8px">${x.reasons.map(esc).join('<br>')}</td></tr>`).join('');
   host.style.display = '';
   host.innerHTML = `<div class="chart-card" style="border-left:3px solid var(--amber);padding:10px 14px">
     <details>
-      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--amber)">⚠️ ${f.length} odometer reading${f.length>1?'s look':' looks'} wrong and ${f.length>1?'are':'is'} ignored in the calculations
-        <span style="font-weight:400;color:var(--text3);font-size:11px"> — click to see which (fix them in the Google Sheet)</span></summary>
+      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--amber)">⚠️ ${f.length} fuel entr${f.length>1?'ies':'y'} to review
+        <span style="font-weight:400;color:var(--text3);font-size:11px"> — click to see them</span></summary>
       <div style="overflow-x:auto;margin-top:8px"><table style="width:100%;font-size:11px;border-collapse:collapse">
-        <thead><tr style="text-align:left;color:var(--text3)"><th style="padding:3px 8px 3px 0">Date</th><th style="padding:3px 8px">Vehicle</th><th style="padding:3px 8px">Reading entered</th><th style="padding:3px 8px">Why it was flagged</th></tr></thead>
+        <thead><tr style="text-align:left;color:var(--text3)"><th style="padding:3px 8px 3px 0">Date</th><th style="padding:3px 8px">Vehicle</th><th style="padding:3px 8px">Odometer</th><th style="padding:3px 8px">Liters</th><th style="padding:3px 8px">Amount</th><th style="padding:3px 8px">Why</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
-      ${f.length>40?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Showing the latest 40 of ${f.length}</div>`:''}
-      <div style="font-size:10px;color:var(--text3);margin-top:8px">Nothing is changed in the sheet. Once the reading is corrected there, the warning disappears on the next refresh.
-        <a href="#" onclick="zfiSetKmCheck(false);return false" style="color:var(--blue);margin-left:6px">Turn the check off</a></div>
+      ${f.length>60?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Showing the latest 60 of ${f.length}</div>`:''}
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">Alarms only — every figure in the dashboard still uses the entries exactly as they are in the sheet. Fix the entry in the sheet and the alarm disappears on the next refresh.
+        <a href="#" onclick="zfiSetKmCheck(false);return false" style="color:var(--blue);margin-left:6px">Turn the alarms off</a></div>
     </details></div>`;
 }
 
@@ -10524,7 +10539,7 @@ const FHC_METRICS = {
   fuel:  {label:'💰 Fuel cost',      unit:'SAR',    fmt:zfiSar},
   maint: {label:'🔧 Maintenance',    unit:'SAR',    fmt:zfiSar},
   total: {label:'📊 Total cost',     unit:'SAR',    fmt:zfiSar},
-  costkm:{label:'💵 Cost per km',    unit:'SAR/km', fmt:v=>v.toFixed(2)}
+  costkm:{label:'💵 Cost per 100 km',unit:'SAR/100km', fmt:v=>Math.round(v).toLocaleString('en-US')}
 };
 
 /* per-vehicle, per-month figures — same matching and km logic as the Fleet Monthly Trend */
@@ -10535,7 +10550,7 @@ function zfiVehMonthly(){
     const date=parseDate(r['التاريخ']||r['Date']||'');
     if(!date) return;
     const rP=normalizePlate((r['المركبة']||r['Plate']||'').trim());
-    fuelRows.push({mk:getMonthKey(date), rN:rP.replace(/\s+/g,' ').trim(), rNum:extractDigits(rP),
+    fuelRows.push({t:date.getTime(), mk:getMonthKey(date), rN:rP.replace(/\s+/g,' ').trim(), rNum:extractDigits(rP),
       cost:parseAmount(r['التكلفة']||r['Cost']),
       lit:parseAmount(r['عدد اللترات']||r['Liters']),
       km:parseAmount(r['عداد الكيلومتر']||r['KM'])});
@@ -10555,6 +10570,7 @@ function zfiVehMonthly(){
   const slot=(p,mk)=>{ const o=by[p].m; return o[mk]||(o[mk]={fuel:0,lit:0,hi:0,lo:0,maint:0,hasFuel:false,hasMaint:false}); };
   fuelRows.forEach(fr=>{
     owners(fr.rN,fr.rNum).forEach(p=>{
+      if(!by[p].lastFuel||fr.t>by[p].lastFuel) by[p].lastFuel=fr.t;
       const s=slot(p,fr.mk); s.hasFuel=true; s.fuel+=fr.cost; s.lit+=fr.lit;
       if(fr.km>s.hi) s.hi=fr.km;
       if(fr.km>0&&(s.lo===0||fr.km<s.lo)) s.lo=fr.km;
@@ -10564,6 +10580,7 @@ function zfiVehMonthly(){
     const date=parseDate(r['Date']||r['date']); if(!date) return;
     const p=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
     if(!by[p]) return;
+    if(!by[p].lastMaint||date.getTime()>by[p].lastMaint) by[p].lastMaint=date.getTime();
     const s=slot(p,getMonthKey(date)); s.hasMaint=true; s.maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);
   });
   const months=new Set();
@@ -10582,7 +10599,7 @@ function zfiFhcValue(m, metric){
     case 'fuel':   return m.hasFuel?m.fuel:null;
     case 'maint':  return m.hasMaint?m.maint:null;
     case 'total':  return (m.hasFuel||m.hasMaint)?m.fuel+m.maint:null;
-    case 'costkm': return m.km>0&&(m.hasFuel||m.hasMaint)?(m.fuel+m.maint)/m.km:null;
+    case 'costkm': return m.km>0&&(m.hasFuel||m.hasMaint)?(m.fuel+m.maint)/m.km*100:null;
   }
   return null;
 }
@@ -10595,7 +10612,7 @@ function zfiFhcAvg(vm, mk, metric){
     if(!n||km<=0) return null;
     if(metric==='kml') return lit>0?km/lit:null;
     if(metric==='l100') return lit>0?lit/km*100:null;
-    return cost/km;
+    return cost/km*100;
   }
   const vals=ms.map(m=>zfiFhcValue(m,metric)).filter(v=>v!=null);
   return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
@@ -10763,6 +10780,46 @@ function renderRHCompare(){
   if(typeof _nav==='function') window.navigate=function(){ const r=_nav.apply(this,arguments); setTimeout(redraw,30); return r; };
 })();
 
+
+/* ── 4) IDLE VEHICLES REPORT (view only) ──────────────────────────
+   A vehicle is idle when its last fuel fill AND its last maintenance are both
+   at least N days ago (or it has no record at all). */
+let _idleDays=7, _idleType='';
+function idleDays(n){ _idleDays=parseInt(n,10)||7; renderIdleVehicles(); }
+function idleType(t){ _idleType=t||''; renderIdleVehicles(); }
+function renderIdleVehicles(){
+  const tb=document.getElementById('idle-tbody'); if(!tb) return;
+  const vm=zfiVehMonthly();
+  const sd=document.getElementById('idle-days'); if(sd) sd.value=String(_idleDays);
+  const st=document.getElementById('idle-type'); if(st) st.value=_idleType;
+  const now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const dAgo=t=>t?Math.max(0,Math.floor((today-new Date(new Date(t).getFullYear(),new Date(t).getMonth(),new Date(t).getDate()).getTime())/86400000)):null;
+  const dstr=t=>t?new Date(t).toISOString().slice(0,10):'\u2014';
+  const rows=[]; let total=0;
+  STATE.fleet.forEach(v=>{
+    const type=plateType(v.plate);
+    if(_idleType && type!==_idleType) return;
+    total++;
+    const d=vm.by[v.plate]||{};
+    const df=dAgo(d.lastFuel), dm=dAgo(d.lastMaint);
+    const known=[df,dm].filter(x=>x!=null);
+    const idle=known.length?Math.min(...known):null;
+    if(idle!==null && idle<_idleDays) return;
+    rows.push({plate:v.plate,type,lf:d.lastFuel,df,lm:d.lastMaint,dm,idle});
+  });
+  rows.sort((a,b)=>(b.idle===null?1e9:b.idle)-(a.idle===null?1e9:a.idle));
+  const tbg={'Shuttling Trucks':'bb','Local Trucks':'bg','ZF Employee Vehicles':'ba'};
+  const sum=document.getElementById('idle-summary');
+  if(sum) sum.textContent=rows.length+' of '+total+' vehicles with no fuel and no maintenance for '+_idleDays+' days or more (as of today, '+dstr(now.getTime())+')';
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">No idle vehicles \u2014 every vehicle had fuel or maintenance in the last '+_idleDays+' days</td></tr>'; return; }
+  tb.innerHTML=rows.map(r=>`<tr>
+    <td style="font-weight:600">${zfiEsc(displayPlate(r.plate))}</td>
+    <td><span class="badge ${tbg[r.type]||'bg'}">${r.type}</span></td>
+    <td>${r.lf?dstr(r.lf):'No record'}</td><td>${r.df!=null?r.df+' d':'\u2014'}</td>
+    <td>${r.lm?dstr(r.lm):'No record'}</td><td>${r.dm!=null?r.dm+' d':'\u2014'}</td>
+    <td style="font-weight:700;color:var(--amber)">${r.idle!=null?r.idle+' d':'No record'}</td></tr>`).join('');
+}
+
 function renderAll() {
   window._zfiVM=null;
   try{ zfiFlagFuelKm(); }catch(e){ console.warn("km check skipped:",e); }
@@ -10777,7 +10834,7 @@ function renderAll() {
   renderFHFuelLog();
   renderRentalHist();
   renderRHTLineChart();
-  try{ zfiRenderKmBanner(); renderFHCompare(); renderRHCompare(); }catch(e){ console.warn("v2 charts:",e); }
+  try{ zfiRenderKmBanner(); renderFHCompare(); renderRHCompare(); renderIdleVehicles(); }catch(e){ console.warn("v2 charts:",e); }
   renderHistorical();
   renderRental();
   renderFleetGrid();
