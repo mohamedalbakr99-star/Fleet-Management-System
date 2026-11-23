@@ -10453,6 +10453,10 @@ function zfiCompareChartSVG(labels, series, opts){
         if(v==null||!isFinite(v)) return;
         const x=padL+bandW*i+gap/2+si*bw, y0=y(0), y1=y(v);
         body+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${(bw-1).toFixed(1)}" height="${Math.max(1,Math.abs(y0-y1)).toFixed(1)}" rx="2" fill="${s.color}" opacity="0.9"><title>${zfiEsc(s.name)} · ${labels[i]}: ${opts.fmt(v)} ${opts.unit||''}</title></rect>`;
+        { const bx=x+(bw-1)/2, by=(v>=0?Math.min(y0,y1)-3:Math.max(y0,y1)+9);
+          body+= bw>=26
+            ? `<text x="${bx.toFixed(1)}" y="${by.toFixed(1)}" font-size="8.5" font-weight="600" text-anchor="middle" style="fill:${s.color}">${opts.fmt(v)}</text>`
+            : `<text transform="translate(${(bx+3).toFixed(1)},${(by+(v>=0?0:-6)).toFixed(1)}) rotate(-90)" font-size="8.5" font-weight="600" style="fill:${s.color}">${opts.fmt(v)}</text>`; }
       });
     });
     if(opts.ref){
@@ -10461,18 +10465,20 @@ function zfiCompareChartSVG(labels, series, opts){
       body+=`<path d="${d}" fill="none" style="stroke:var(--text2,#94a3b8)" stroke-width="1.6" stroke-dasharray="5,4"/>`;
     }
   } else {
-    const drawLine=(vals,color,dash,w,marker,name)=>{
+    const drawLine=(vals,color,dash,w,marker,name,si)=>{
       let d='',pen=false,dots='';
       vals.forEach((v,i)=>{
         if(v==null||!isFinite(v)){pen=false;return;}
         const px=xC(i), py=y(v);
         d+=(pen?' L':' M')+px.toFixed(1)+','+py.toFixed(1); pen=true;
         if(marker) dots+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.6" fill="${color}" style="stroke:var(--bg2,#fff)" stroke-width="1.2"><title>${zfiEsc(name)} · ${labels[i]}: ${opts.fmt(v)} ${opts.unit||''}</title></circle>`;
+        if(marker){ const up=(si%2===0); let ly=up?py-8:py+15; if(ly<padT+6) ly=py+15; if(ly>padT+ch+2) ly=py-8;
+          dots+=`<text x="${px.toFixed(1)}" y="${ly.toFixed(1)}" font-size="8.5" font-weight="600" text-anchor="middle" style="fill:${color}">${opts.fmt(v)}</text>`; }
       });
       return `<path d="${d}" fill="none" style="stroke:${color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"${dash?` stroke-dasharray="${dash}"`:''}/>`+dots;
     };
     if(opts.ref) body+=drawLine(opts.ref.values,'var(--text2,#94a3b8)','5,4',1.6,false,opts.ref.name);
-    series.forEach(s=>{ body+=drawLine(s.values,s.color,'',2.4,true,s.name); });
+    series.forEach((s,si)=>{ body+=drawLine(s.values,s.color,'',2.4,true,s.name,si); });
   }
   const step=n>14?Math.ceil(n/14):1;
   let xl='';
