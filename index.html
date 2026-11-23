@@ -778,7 +778,7 @@ html.auth-locked body{overflow:hidden}
 
   <!-- Page action bar -->
   <div class="page-actions">
-    <div class="pa-title" id="page-title">Current Month <span id="page-subtitle">June 2026 MTD</span></div>
+    <div class="pa-title" id="page-title">Current Month <span id="page-subtitle">MTD</span></div>
     <div class="pa-actions">
       <div class="zfi-user" id="zfiUser" title="Signed in"><span class="zfi-user-dot"></span><span id="zfiUserName">—</span><span class="zfi-user-role" id="zfiUserRole"></span></div>
       <button class="btn btn-ghost" id="zfiLogoutBtn" onclick="zfiLogout()" title="Sign out">
@@ -816,7 +816,7 @@ html.auth-locked body{overflow:hidden}
             <div style="flex:1">
               <div class="kpi-label">Total Sales — MTD</div>
               <div class="kpi-val g" id="kpi-total-sales" style="font-size:22px;margin:5px 0">SAR 5.49M</div>
-              <div class="kpi-sub" id="kpi-total-sub">9 days · June 2026</div>
+              <div class="kpi-sub" id="kpi-total-sub">—</div>
             </div>
             <div style="width:36px;height:36px;border-radius:9px;background:rgba(29,185,122,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1db97a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -4199,6 +4199,7 @@ html.auth-locked body{overflow:hidden}
 
     <!-- ════ FLEET HISTORICAL ════ -->
     <div class="page" id="page-fleet-hist">
+      <div id="zfi-km-banner" style="display:none;margin-bottom:14px"></div>
       <!-- Fleet Historical KPI Cards -->
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
         <div style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Filter:</div>
@@ -4266,6 +4267,42 @@ html.auth-locked body{overflow:hidden}
           <button onclick="setFHTFleet('ZF Employee Vehicles')" id="fhtf-zf" class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 10px">👤 ZF Employee</button>
         </div>
         <div id="fht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
+      </div>
+
+      <!-- ═══ v2: Vehicle Comparison ═══ -->
+      <div class="chart-card" style="margin-bottom:14px" id="fhc-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">🆚 Vehicle Comparison <span style="font-size:10px;font-weight:400;color:var(--text3)">· up to 5 vehicles, month by month</span></div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['fhc-tbody'],'Vehicle Comparison')" title="Download the comparison table as Excel">📥 Excel</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+          <select class="form-select" id="fhc-pick" onchange="fhcAdd(this.value)" style="padding:5px 8px;font-size:11px;max-width:200px"></select>
+          <span id="fhc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+          <button class="btn btn-ghost btn-sm" onclick="fhcClear()" style="font-size:10px;padding:3px 8px">Clear</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button id="fhcm-km" onclick="fhcMetric('km')" class="btn btn-primary btn-sm">📍 KM driven</button>
+          <button id="fhcm-liters" onclick="fhcMetric('liters')" class="btn btn-ghost btn-sm">⛽ Liters</button>
+          <button id="fhcm-kml" onclick="fhcMetric('kml')" class="btn btn-ghost btn-sm">📐 KM per liter</button>
+          <button id="fhcm-l100" onclick="fhcMetric('l100')" class="btn btn-ghost btn-sm">💧 L / 100 km</button>
+          <button id="fhcm-fuel" onclick="fhcMetric('fuel')" class="btn btn-ghost btn-sm">💰 Fuel cost</button>
+          <button id="fhcm-maint" onclick="fhcMetric('maint')" class="btn btn-ghost btn-sm">🔧 Maintenance</button>
+          <button id="fhcm-total" onclick="fhcMetric('total')" class="btn btn-ghost btn-sm">📊 Total cost</button>
+          <button id="fhcm-costkm" onclick="fhcMetric('costkm')" class="btn btn-ghost btn-sm">💵 Cost per km</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <select class="form-select" id="fhc-range" onchange="fhcRange(this.value)" style="padding:4px 8px;font-size:11px">
+            <option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="0">All months</option>
+          </select>
+          <button id="fhck-line" onclick="fhcKind('line')" class="btn btn-primary btn-sm">📈 Lines</button>
+          <button id="fhck-bar" onclick="fhcKind('bar')" class="btn btn-ghost btn-sm">📊 Bars</button>
+          <label style="font-size:11px;color:var(--text2);display:inline-flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" id="fhc-avg" checked onchange="fhcAvgToggle(this.checked)"> Show fleet average</label>
+        </div>
+        <div id="fhc-chart" style="width:100%"></div>
+        <div id="fhc-legend"></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px">KM per month = highest − lowest odometer reading in that month (same as the cards above). Months with fewer than 2 readings show a gap. Readings flagged ⚠️ are ignored.</div>
+        <div style="margin-top:8px"><a href="#" onclick="var w=document.getElementById('fhc-tbl');w.style.display=w.style.display==='none'?'':'none';return false" style="font-size:11px;color:var(--blue)">▾ Show / hide data table</a></div>
+        <div class="tbl-wrap" id="fhc-tbl" style="display:none;margin:8px 0 0;overflow-x:auto"><table><thead id="fhc-thead"></thead><tbody id="fhc-tbody"></tbody></table></div>
       </div>
 
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -4703,6 +4740,40 @@ html.auth-locked body{overflow:hidden}
           </select>
         </div>
         <div id="rht-line-chart" style="width:100%;position:relative;overflow:hidden"></div>
+      </div>
+
+      <!-- ═══ v2: Company Comparison ═══ -->
+      <div class="chart-card" style="margin-bottom:14px" id="rhc-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div class="chart-title" style="margin:0">🆚 Company Comparison <span style="font-size:10px;font-weight:400;color:var(--text3)">· up to 5 companies, month by month</span></div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(29,185,122,.45)" onclick="zfiExportTables(['rhc-tbody'],'Company Comparison')" title="Download the comparison table as Excel">📥 Excel</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+          <select class="form-select" id="rhc-pick" onchange="rhcAdd(this.value)" style="padding:5px 8px;font-size:11px;max-width:200px"></select>
+          <span id="rhc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+          <button class="btn btn-ghost btn-sm" onclick="rhcClear()" style="font-size:10px;padding:3px 8px">Clear</button>
+          <span style="font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-left:6px">Destination:</span>
+          <select class="form-select" id="rhc-dest" onchange="rhcDest(this.value)" style="padding:4px 8px;font-size:11px"></select>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button id="rhcm-trips" onclick="rhcMetric('trips')" class="btn btn-primary btn-sm">🚚 Trucks / trips</button>
+          <button id="rhcm-cost" onclick="rhcMetric('cost')" class="btn btn-ghost btn-sm">💰 Total cost</button>
+          <button id="rhcm-avg" onclick="rhcMetric('avg')" class="btn btn-ghost btn-sm">📊 Avg price / truck</button>
+          <button id="rhcm-share" onclick="rhcMetric('share')" class="btn btn-ghost btn-sm">🥧 Share of spend</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+          <select class="form-select" id="rhc-range" onchange="rhcRange(this.value)" style="padding:4px 8px;font-size:11px">
+            <option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="0">All months</option>
+          </select>
+          <button id="rhck-line" onclick="rhcKind('line')" class="btn btn-primary btn-sm">📈 Lines</button>
+          <button id="rhck-bar" onclick="rhcKind('bar')" class="btn btn-ghost btn-sm">📊 Bars</button>
+          <label style="font-size:11px;color:var(--text2);display:inline-flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" id="rhc-avg" checked onchange="rhcAvgToggle(this.checked)"> Show average</label>
+        </div>
+        <div id="rhc-chart" style="width:100%"></div>
+        <div id="rhc-legend"></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px">Uses the same trips as the Rental Monthly Trend (rented trips with a cost). “Share of spend” = the company’s cost ÷ all rental cost that month.</div>
+        <div style="margin-top:8px"><a href="#" onclick="var w=document.getElementById('rhc-tbl');w.style.display=w.style.display==='none'?'':'none';return false" style="font-size:11px;color:var(--blue)">▾ Show / hide data table</a></div>
+        <div class="tbl-wrap" id="rhc-tbl" style="display:none;margin:8px 0 0;overflow-x:auto"><table><thead id="rhc-thead"></thead><tbody id="rhc-tbody"></tbody></table></div>
       </div>
 
       <!-- Company Analysis -->
@@ -7827,7 +7898,7 @@ function renderFHFuelLog() {
     const kml    = driven>0&&liters>0 ? (driven/liters).toFixed(2) : '—';
     const lkm    = driven>0&&liters>0 ? (liters/driven).toFixed(4) : '—';
 
-    rows.push({date, plate:vehicle.plate, type:plateType(vehicle.plate), prevKm, km, driven, liters, cost, kml, lkm});
+    rows.push({date, plate:vehicle.plate, type:plateType(vehicle.plate), prevKm, km, driven, liters, cost, kml, lkm, kmWhy:r._kmWhy||'', kmRaw:r._kmRaw});
     if(km > prevKm) prevKmMap[vehicle.plate] = km;
   });
 
@@ -7848,7 +7919,7 @@ function renderFHFuelLog() {
       <td style="font-weight:600">${displayPlate(r.plate)}</td>
       <td><span class="badge ${tb[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.prevKm?r.prevKm.toLocaleString():'—'}</td>
-      <td style="font-weight:600">${r.km?r.km.toLocaleString():'—'}</td>
+      <td style="font-weight:600">${r.kmWhy?`<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} — ignored in calculations" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span>`:(r.km?r.km.toLocaleString():'—')}</td>
       <td style="color:${r.driven>0?'var(--green)':'var(--text3)'}">${r.driven?r.driven.toLocaleString():'—'}</td>
       <td>${r.liters?Math.round(r.liters):'—'}</td>
       <td style="color:var(--blue)">${r.cost?fmt(r.cost):'—'}</td>
@@ -9574,7 +9645,7 @@ function renderFuelTable() {
     rows.push({
       date, plate: vehicle.plate, type: plateType(vehicle.plate),
       vehicle: `${vehicle.make||''} ${vehicle.model||''}`.trim() || '—',
-      city: vehicle.city || '—', liters, cost, km, prevKm, driven, l100, costKm
+      city: vehicle.city || '—', liters, cost, km, prevKm, driven, l100, costKm, kmWhy:r._kmWhy||'', kmRaw:r._kmRaw
     });
 
     if (km > prevKm) prevKmMap[vehicle.plate] = km;
@@ -9614,7 +9685,7 @@ function renderFuelTable() {
       <td><span class="badge ${typeBadge[r.type]||'bg'}">${r.type}</span></td>
       <td>${r.city}</td>
       <td>${r.prevKm ? r.prevKm.toLocaleString() : '—'}</td>
-      <td style="font-weight:600">${r.km ? r.km.toLocaleString() : '—'}</td>
+      <td style="font-weight:600">${r.kmWhy ? `<span title="${String(r.kmWhy).replace(/"/g,'&quot;')} — ignored in calculations" style="color:var(--amber);cursor:help">⚠️ ${(parseAmount(r.kmRaw)||0).toLocaleString()}</span>` : (r.km ? r.km.toLocaleString() : '—')}</td>
       <td style="color:${r.driven>0?'var(--green)':'var(--text3)'};font-weight:600">${r.driven ? r.driven.toLocaleString() : '—'}</td>
       <td>${r.liters ? Math.round(r.liters) : '—'}</td>
       <td style="color:var(--blue);font-weight:600">${r.cost ? fmt(r.cost) : '—'}</td>
@@ -10221,7 +10292,474 @@ function filterMaintPlate(val) {
   } else if (q.length === 0) { sel.value = ''; renderFleetMaintDetails(); }
 }
 
+/* ════════════════════════════════════════════════════════════════
+   ZFI v2 additions (additive only — nothing above this block is modified
+   except small hooks in renderAll / the two fuel tables)
+   1) Odometer sanity check      2) Vehicle comparison   3) Company comparison
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1) ODOMETER SANITY CHECK ─────────────────────────────────────
+   A reading is flagged when it is out of line with the readings before
+   and after it for the same vehicle. Flagged readings are NEVER edited in
+   the Google Sheet; they are only ignored in memory, shown with a ⚠️ in the
+   fuel tables, and listed in the banner on the Fleet Historical page.
+   Limits below are editable: allowed jump = perDay × days since last reading + slack. */
+const ZFI_KM_RULES = {
+  'Local Trucks':         { perDay: 700,  slack: 500 },
+  'Shuttling Trucks':     { perDay: 1200, slack: 600 },
+  'ZF Employee Vehicles': { perDay: 600,  slack: 400 },
+  _default:               { perDay: 800,  slack: 500 }
+};
+const ZFI_KM_KEYS = ['عداد الكيلومتر','KM','Odometer','odometer','الكيلومتر','عداد'];
+window.ZFI_KM_FLAGS = [];
+
+function zfiKmEnabled(){ try{ return localStorage.getItem('zfi_km_check')!=='off'; }catch(e){ return true; } }
+function zfiSetKmCheck(on){ try{ localStorage.setItem('zfi_km_check', on?'on':'off'); }catch(e){} renderAll(); }
+
+function zfiFlagFuelKm(){
+  const rows = STATE.fuel || [];
+  // 1) put back anything flagged by a previous run (keeps this function idempotent)
+  rows.forEach(r=>{
+    if(r && r._kmKeys){
+      for(const k in r._kmKeys) r[k] = r._kmKeys[k];
+      delete r._kmKeys; delete r._kmRaw; delete r._kmWhy;
+    }
+  });
+  window.ZFI_KM_FLAGS = [];
+  if(!zfiKmEnabled()) return;
+
+  // 2) group readings per vehicle
+  const groups = {};
+  rows.forEach((r,idx)=>{
+    if(!r) return;
+    let key = null;
+    for(const k of ZFI_KM_KEYS){ if(r[k]!==undefined && r[k]!==null && String(r[k]).trim()!==''){ key=k; break; } }
+    if(!key) return;
+    const km = parseAmount(r[key]);
+    if(!(km>0)) return;
+    const date = parseDate(r['التاريخ']||r['Date']||'');
+    if(!date || isNaN(date)) return;
+    const rawPlate = String(r['المركبة']||r['Plate']||'').trim();
+    const p = normalizePlate(rawPlate).replace(/\s+/g,' ');
+    if(!p) return;
+    (groups[p] = groups[p] || []).push({r, km, t:date.getTime(), idx, key, rawPlate, date});
+  });
+
+  const days  = (a,b)=>Math.max(1, Math.round(Math.abs(b.t-a.t)/86400000));
+  const limit = (a,b,rule)=>rule.perDay*days(a,b)+rule.slack;
+  const fmtN  = n=>Math.round(n).toLocaleString('en-US');
+
+  Object.keys(groups).forEach(p=>{
+    const seq = groups[p].sort((a,b)=>a.t-b.t || a.idx-b.idx);
+    if(seq.length<2) return;
+    const rule = ZFI_KM_RULES[plateType(seq[0].rawPlate)] || ZFI_KM_RULES._default;
+    let prev = null;
+    for(let i=0;i<seq.length;i++){
+      const c = seq[i], nx = seq[i+1]||null, nx2 = seq[i+2]||null;
+      let why = null;
+      if(prev){
+        const d = c.km - prev.km;
+        if(d > limit(prev,c,rule)){
+          if(!nx) why = '+'+fmtN(d)+' km vs previous reading '+fmtN(prev.km)+' ('+days(prev,c)+' d) — latest reading, not confirmed';
+          else if(nx.km < c.km-50) why = '+'+fmtN(d)+' km vs previous reading '+fmtN(prev.km)+' ('+days(prev,c)+' d) — next reading ('+fmtN(nx.km)+') is much lower';
+        } else if(d < -50){
+          if(!nx) why = fmtN(-d)+' km LOWER than previous reading '+fmtN(prev.km)+' — latest reading';
+          else if(nx.km >= prev.km-50) why = fmtN(-d)+' km LOWER than previous reading '+fmtN(prev.km)+' — next reading ('+fmtN(nx.km)+') is back in line';
+        }
+      } else if(nx && nx2){
+        const d = c.km - nx.km;
+        const agree = nx2.km >= nx.km-50 && (nx2.km-nx.km) <= limit(nx,nx2,rule);
+        if(agree){
+          if(d > 50) why = 'first reading is '+fmtN(d)+' km ABOVE the next readings ('+fmtN(nx.km)+', '+fmtN(nx2.km)+')';
+          else if(-d > limit(c,nx,rule)) why = 'first reading is '+fmtN(-d)+' km BELOW the next readings ('+fmtN(nx.km)+', '+fmtN(nx2.km)+')';
+        }
+      }
+      if(why){
+        const r = c.r;
+        r._kmRaw = r[c.key]; r._kmWhy = why; r._kmKeys = {};
+        ZFI_KM_KEYS.forEach(k=>{ if(k in r){ r._kmKeys[k] = r[k]; r[k] = ''; } });
+        window.ZFI_KM_FLAGS.push({ plate:c.rawPlate, date:c.date, raw:c.km, why });
+      } else {
+        prev = c;
+      }
+    }
+  });
+  window.ZFI_KM_FLAGS.sort((a,b)=>b.date-a.date);
+}
+
+function zfiRenderKmBanner(){
+  const host = document.getElementById('zfi-km-banner');
+  if(!host) return;
+  const f = window.ZFI_KM_FLAGS || [];
+  if(!zfiKmEnabled()){
+    host.style.display = '';
+    host.innerHTML = '<div class="chart-card" style="padding:10px 14px;font-size:11px;color:var(--text3)">Odometer check is <b>OFF</b> — all readings are used as entered. <a href="#" onclick="zfiSetKmCheck(true);return false" style="color:var(--blue)">Turn on</a></div>';
+    return;
+  }
+  if(!f.length){ host.style.display='none'; host.innerHTML=''; return; }
+  const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const rows = f.slice(0,40).map(x=>`<tr>
+      <td style="white-space:nowrap">${x.date.toISOString().slice(0,10)}</td>
+      <td style="font-weight:600;white-space:nowrap">${esc(displayPlate(normalizePlate(x.plate)))}</td>
+      <td style="color:var(--amber);font-weight:600">${Math.round(x.raw).toLocaleString('en-US')}</td>
+      <td style="color:var(--text2)">${esc(x.why)}</td></tr>`).join('');
+  host.style.display = '';
+  host.innerHTML = `<div class="chart-card" style="border-left:3px solid var(--amber);padding:10px 14px">
+    <details>
+      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--amber)">⚠️ ${f.length} odometer reading${f.length>1?'s look':' looks'} wrong and ${f.length>1?'are':'is'} ignored in the calculations
+        <span style="font-weight:400;color:var(--text3);font-size:11px"> — click to see which (fix them in the Google Sheet)</span></summary>
+      <div style="overflow-x:auto;margin-top:8px"><table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead><tr style="text-align:left;color:var(--text3)"><th style="padding:3px 8px 3px 0">Date</th><th style="padding:3px 8px">Vehicle</th><th style="padding:3px 8px">Reading entered</th><th style="padding:3px 8px">Why it was flagged</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      ${f.length>40?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Showing the latest 40 of ${f.length}</div>`:''}
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">Nothing is changed in the sheet. Once the reading is corrected there, the warning disappears on the next refresh.
+        <a href="#" onclick="zfiSetKmCheck(false);return false" style="color:var(--blue);margin-left:6px">Turn the check off</a></div>
+    </details></div>`;
+}
+
+/* ── shared helpers for the two comparison charts ─────────────── */
+const ZFI_CMP_COLORS = ['#3b82f6','#f59e0b','#10b981','#ef4444','#a855f7'];
+function zfiSar(v){ const a=Math.abs(v); return a>=1e6?(v/1e6).toFixed(2)+'M':a>=1e3?(v/1e3).toFixed(1)+'K':Math.round(v).toLocaleString('en-US'); }
+function zfiMonthLabel(mk){ return MONTH_NAMES[parseInt(mk.slice(5,7),10)-1]+' '+mk.slice(2,4); }
+function zfiEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+/* Multi-series SVG chart. series: [{name,color,values:[num|null]}], labels: month labels.
+   opts: {kind:'line'|'bar', fmt:fn, unit:'', ref:{name,values}|null, minZero:true} */
+function zfiCompareChartSVG(labels, series, opts){
+  const W=Math.max(320,Math.min(1100,opts.width||720)),H=270,padL=56,padR=16,padT=16,padB=36;
+  const cw=W-padL-padR, ch=H-padT-padB, n=labels.length;
+  const all=[]; series.forEach(s=>s.values.forEach(v=>{ if(v!=null&&isFinite(v)) all.push(v); }));
+  if(opts.ref) opts.ref.values.forEach(v=>{ if(v!=null&&isFinite(v)) all.push(v); });
+  if(!all.length) return '<div style="text-align:center;color:var(--text3);padding:34px 0;font-size:12px">No data for this selection</div>';
+  const zero = opts.kind==='bar' || opts.zero!==false;
+  let maxV=Math.max(...all), minV=zero?Math.min(...all,0):Math.min(...all);
+  if(!zero){ const pad=((maxV-minV)||Math.abs(maxV)||1)*0.12; minV-=pad; maxV+=pad; if(minV<0&&Math.min(...all)>=0) minV=0; }
+  if(maxV===minV) maxV=minV+1;
+  const range=maxV-minV;
+  const y=v=>padT+ch-((v-minV)/range)*ch;
+  const grid=[];
+  for(let i=0;i<=4;i++){
+    const v=minV+range*i/4, yy=y(v);
+    grid.push(`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" style="stroke:var(--border2,#334155)" stroke-width="0.8" stroke-dasharray="${i===0?'0':'4,3'}" opacity="0.7"/>`+
+      `<text x="${padL-6}" y="${(yy+3).toFixed(1)}" font-size="9" text-anchor="end" style="fill:var(--text3,#94a3b8)">${opts.fmt(v)}</text>`);
+  }
+  const bandW=cw/Math.max(n,1);
+  const xC=i=>padL+bandW*(i+0.5);
+  let body='';
+  if(opts.kind==='bar'){
+    const ns=series.length, gap=Math.min(bandW*0.2,10), bw=Math.max(2,(bandW-gap)/ns);
+    series.forEach((s,si)=>{
+      s.values.forEach((v,i)=>{
+        if(v==null||!isFinite(v)) return;
+        const x=padL+bandW*i+gap/2+si*bw, y0=y(0), y1=y(v);
+        body+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${(bw-1).toFixed(1)}" height="${Math.max(1,Math.abs(y0-y1)).toFixed(1)}" rx="2" fill="${s.color}" opacity="0.9"><title>${zfiEsc(s.name)} · ${labels[i]}: ${opts.fmt(v)} ${opts.unit||''}</title></rect>`;
+      });
+    });
+    if(opts.ref){
+      let d='',pen=false;
+      opts.ref.values.forEach((v,i)=>{ if(v==null||!isFinite(v)){pen=false;return;} d+=(pen?' L':' M')+xC(i).toFixed(1)+','+y(v).toFixed(1); pen=true; });
+      body+=`<path d="${d}" fill="none" style="stroke:var(--text2,#94a3b8)" stroke-width="1.6" stroke-dasharray="5,4"/>`;
+    }
+  } else {
+    const drawLine=(vals,color,dash,w,marker,name)=>{
+      let d='',pen=false,dots='';
+      vals.forEach((v,i)=>{
+        if(v==null||!isFinite(v)){pen=false;return;}
+        const px=xC(i), py=y(v);
+        d+=(pen?' L':' M')+px.toFixed(1)+','+py.toFixed(1); pen=true;
+        if(marker) dots+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.6" fill="${color}" style="stroke:var(--bg2,#fff)" stroke-width="1.2"><title>${zfiEsc(name)} · ${labels[i]}: ${opts.fmt(v)} ${opts.unit||''}</title></circle>`;
+      });
+      return `<path d="${d}" fill="none" style="stroke:${color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"${dash?` stroke-dasharray="${dash}"`:''}/>`+dots;
+    };
+    if(opts.ref) body+=drawLine(opts.ref.values,'var(--text2,#94a3b8)','5,4',1.6,false,opts.ref.name);
+    series.forEach(s=>{ body+=drawLine(s.values,s.color,'',2.4,true,s.name); });
+  }
+  const step=n>14?Math.ceil(n/14):1;
+  let xl='';
+  labels.forEach((l,i)=>{ if(i%step===0||i===n-1) xl+=`<text x="${xC(i).toFixed(1)}" y="${H-12}" font-size="9" text-anchor="middle" style="fill:var(--text3,#94a3b8)">${l}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img">${grid.join('')}${body}${xl}</svg>`;
+}
+
+/* Legend chips + ref-line chip */
+function zfiCompareLegend(series, ref, fmt, unit){
+  let h='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">';
+  series.forEach(s=>{
+    const vs=s.values.filter(v=>v!=null&&isFinite(v));
+    const avg=vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null;
+    h+=`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:${s.color}"></span><b style="color:var(--text)">${zfiEsc(s.label||s.name)}</b>${avg!=null?`<span style="color:var(--text3)">avg ${fmt(avg)} ${unit||''}</span>`:'<span style="color:var(--text3)">no data</span>'}</span>`;
+  });
+  if(ref) h+=`<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;border-top:2px dashed var(--text2)"></span><b style="color:var(--text)">${zfiEsc(ref.name)}</b></span>`;
+  return h+'</div>';
+}
+
+/* Data table under the chart (also what the Excel button exports) */
+function zfiCompareTable(tbodyId, theadId, labels, series, ref, fmt, firstCol){
+  const th=document.getElementById(theadId), tb=document.getElementById(tbodyId);
+  if(!th||!tb) return;
+  th.innerHTML='<tr><th>'+firstCol+'</th>'+series.map(s=>`<th>${zfiEsc(s.label||s.name)}</th>`).join('')+(ref?`<th>${zfiEsc(ref.name)}</th>`:'')+'</tr>';
+  tb.innerHTML=labels.map((l,i)=>'<tr><td style="font-weight:600">'+l+'</td>'+
+    series.map(s=>`<td>${s.values[i]==null?'—':fmt(s.values[i])}</td>`).join('')+
+    (ref?`<td style="color:var(--text3)">${ref.values[i]==null?'—':fmt(ref.values[i])}</td>`:'')+'</tr>').join('');
+}
+
+function zfiSelChips(sel, labelFn, removeFn){
+  return sel.map((k,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 8px;border-radius:14px;font-size:11px;font-weight:600;background:var(--bg3);border:1px solid ${ZFI_CMP_COLORS[i]};color:var(--text)">
+    <span style="width:8px;height:8px;border-radius:50%;background:${ZFI_CMP_COLORS[i]}"></span>${zfiEsc(labelFn(k))}
+    <button onclick="${removeFn}(${i})" title="Remove" style="border:0;background:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1;padding:0 2px">×</button></span>`).join('');
+}
+
+/* ── 2) VEHICLE COMPARISON (Fleet Historical) ─────────────────── */
+let _fhcSel=[], _fhcInit=false, _fhcMetric='km', _fhcRange=12, _fhcKind='line', _fhcAvg=true;
+const FHC_METRICS = {
+  km:    {label:'📍 KM driven',     unit:'km',     fmt:v=>Math.round(v).toLocaleString('en-US')},
+  liters:{label:'⛽ Liters',               unit:'L',      fmt:v=>Math.round(v).toLocaleString('en-US')},
+  kml:   {label:'📐 KM per liter',   unit:'km/L',   fmt:v=>v.toFixed(2)},
+  l100:  {label:'💧 L / 100 km',     unit:'L/100km',fmt:v=>v.toFixed(1)},
+  fuel:  {label:'💰 Fuel cost',      unit:'SAR',    fmt:zfiSar},
+  maint: {label:'🔧 Maintenance',    unit:'SAR',    fmt:zfiSar},
+  total: {label:'📊 Total cost',     unit:'SAR',    fmt:zfiSar},
+  costkm:{label:'💵 Cost per km',    unit:'SAR/km', fmt:v=>v.toFixed(2)}
+};
+
+/* per-vehicle, per-month figures — same matching and km logic as the Fleet Monthly Trend */
+function zfiVehMonthly(){
+  if(window._zfiVM) return window._zfiVM;
+  const fuelRows=[];
+  STATE.fuel.forEach(r=>{
+    const date=parseDate(r['التاريخ']||r['Date']||'');
+    if(!date) return;
+    const rP=normalizePlate((r['المركبة']||r['Plate']||'').trim());
+    fuelRows.push({mk:getMonthKey(date), rN:rP.replace(/\s+/g,' ').trim(), rNum:extractDigits(rP),
+      cost:parseAmount(r['التكلفة']||r['Cost']),
+      lit:parseAmount(r['عدد اللترات']||r['Liters']),
+      km:parseAmount(r['عداد الكيلومتر']||r['KM'])});
+  });
+  const matches=(v,rN,rNum)=>{
+    if(v.arPlate) return v.arPlate.replace(/\s+/g,' ').trim()===rN;
+    const fm=STATE.fleet.filter(v2=>extractDigits(v2.plate)===rNum);
+    if(fm.length===1) return fm[0].plate===v.plate;
+    if(fm.length>1){ const am=fm.find(v2=>v2.arPlate&&v2.arPlate.replace(/\s+/g,' ').trim()===rN); return am?am.plate===v.plate:fm[0].plate===v.plate; }
+    const pm=STATE.fleet.filter(v2=>{const vn=extractDigits(v2.plate);return vn&&(rNum.endsWith(vn.slice(-4))||vn.endsWith(rNum.slice(-4)));});
+    return pm.length===1 && pm[0].plate===v.plate;
+  };
+  // which vehicles each distinct plate text belongs to (computed once per distinct text)
+  const ownerCache={};
+  const owners=(rN,rNum)=>{ const k=rN+'|'+rNum; if(!ownerCache[k]) ownerCache[k]=STATE.fleet.filter(v=>matches(v,rN,rNum)).map(v=>v.plate); return ownerCache[k]; };
+  const by={}; STATE.fleet.forEach(v=>{ by[v.plate]={plate:v.plate,type:plateType(v.plate),m:{}}; });
+  const slot=(p,mk)=>{ const o=by[p].m; return o[mk]||(o[mk]={fuel:0,lit:0,hi:0,lo:0,maint:0,hasFuel:false,hasMaint:false}); };
+  fuelRows.forEach(fr=>{
+    owners(fr.rN,fr.rNum).forEach(p=>{
+      const s=slot(p,fr.mk); s.hasFuel=true; s.fuel+=fr.cost; s.lit+=fr.lit;
+      if(fr.km>s.hi) s.hi=fr.km;
+      if(fr.km>0&&(s.lo===0||fr.km<s.lo)) s.lo=fr.km;
+    });
+  });
+  STATE.maintenance.forEach(r=>{
+    const date=parseDate(r['Date']||r['date']); if(!date) return;
+    const p=normalizePlate((r['Truck Plate']||r['Plate']||r['plate']||'').trim());
+    if(!by[p]) return;
+    const s=slot(p,getMonthKey(date)); s.hasMaint=true; s.maint+=parseAmount(r['cost']||r['Amount']||r['amount']||0);
+  });
+  const months=new Set();
+  Object.values(by).forEach(v=>{ Object.keys(v.m).forEach(mk=>{ const s=v.m[mk]; s.km=(s.hi>0&&s.lo>0&&s.hi>s.lo)?s.hi-s.lo:0; months.add(mk); }); });
+  window._zfiVM={by, months:[...months].sort()};
+  return window._zfiVM;
+}
+
+function zfiFhcValue(m, metric){
+  if(!m) return null;
+  switch(metric){
+    case 'km':     return m.km>0?m.km:null;
+    case 'liters': return m.hasFuel?m.lit:null;
+    case 'kml':    return m.km>0&&m.lit>0?m.km/m.lit:null;
+    case 'l100':   return m.km>0&&m.lit>0?m.lit/m.km*100:null;
+    case 'fuel':   return m.hasFuel?m.fuel:null;
+    case 'maint':  return m.hasMaint?m.maint:null;
+    case 'total':  return (m.hasFuel||m.hasMaint)?m.fuel+m.maint:null;
+    case 'costkm': return m.km>0&&(m.hasFuel||m.hasMaint)?(m.fuel+m.maint)/m.km:null;
+  }
+  return null;
+}
+/* fleet average for one month: plain mean for amounts, pooled ratio for ratios */
+function zfiFhcAvg(vm, mk, metric){
+  const ms=Object.values(vm.by).map(v=>v.m[mk]).filter(Boolean);
+  if(['kml','l100','costkm'].includes(metric)){
+    let km=0,lit=0,cost=0,n=0;
+    ms.forEach(m=>{ if(m.km>0){ km+=m.km; lit+=m.lit; cost+=m.fuel+m.maint; n++; } });
+    if(!n||km<=0) return null;
+    if(metric==='kml') return lit>0?km/lit:null;
+    if(metric==='l100') return lit>0?lit/km*100:null;
+    return cost/km;
+  }
+  const vals=ms.map(m=>zfiFhcValue(m,metric)).filter(v=>v!=null);
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+}
+
+function fhcAdd(plate){ if(!plate||_fhcSel.includes(plate)||_fhcSel.length>=5) return; _fhcSel.push(plate); renderFHCompare(); }
+function fhcRemove(i){ _fhcSel.splice(i,1); renderFHCompare(); }
+function fhcClear(){ _fhcSel=[]; renderFHCompare(); }
+function fhcMetric(m){ _fhcMetric=m; renderFHCompare(); }
+function fhcRange(n){ _fhcRange=parseInt(n,10)||0; renderFHCompare(); }
+function fhcKind(k){ _fhcKind=k; renderFHCompare(); }
+function fhcAvgToggle(on){ _fhcAvg=!!on; renderFHCompare(); }
+
+function renderFHCompare(){
+  const host=document.getElementById('fhc-chart'); if(!host) return;
+  const vm=zfiVehMonthly();
+  // first time: pre-pick the 3 vehicles with the highest fuel cost
+  if(!_fhcInit && STATE.fleet.length && vm.months.length){
+    _fhcInit=true;
+    const tot=Object.values(vm.by).map(v=>({p:v.plate,t:Object.values(v.m).reduce((a,m)=>a+m.fuel,0)})).filter(x=>x.t>0).sort((a,b)=>b.t-a.t);
+    _fhcSel=tot.slice(0,3).map(x=>x.p);
+  }
+  // picker (rebuilt every time so already-chosen vehicles disappear from it)
+  const pick=document.getElementById('fhc-pick');
+  if(pick){
+    const groups={};
+    STATE.fleet.forEach(v=>{ if(_fhcSel.includes(v.plate)) return; (groups[plateType(v.plate)]=groups[plateType(v.plate)]||[]).push(v.plate); });
+    pick.innerHTML='<option value="">'+(_fhcSel.length>=5?'Maximum 5 reached':'+ Add vehicle…')+'</option>'+
+      Object.keys(groups).sort().map(t=>`<optgroup label="${t}">`+groups[t].sort().map(p=>`<option value="${zfiEsc(p)}">${zfiEsc(displayPlate(p))}</option>`).join('')+'</optgroup>').join('');
+    pick.disabled=_fhcSel.length>=5;
+  }
+  const chips=document.getElementById('fhc-chips');
+  if(chips) chips.innerHTML=zfiSelChips(_fhcSel,p=>displayPlate(p),'fhcRemove');
+  Object.keys(FHC_METRICS).forEach(k=>{ const b=document.getElementById('fhcm-'+k); if(b) b.className=(k===_fhcMetric?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'); });
+  ['line','bar'].forEach(k=>{ const b=document.getElementById('fhck-'+k); if(b) b.className=(k===_fhcKind?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'); });
+  const rs=document.getElementById('fhc-range'); if(rs) rs.value=String(_fhcRange);
+  const ac=document.getElementById('fhc-avg'); if(ac) ac.checked=_fhcAvg;
+
+  const cfg=FHC_METRICS[_fhcMetric];
+  let months=vm.months; if(_fhcRange>0) months=months.slice(-_fhcRange);
+  const labels=months.map(zfiMonthLabel);
+  if(!_fhcSel.length){
+    host.innerHTML='<div style="text-align:center;color:var(--text3);padding:34px 0;font-size:12px">Pick up to 5 vehicles to compare them month by month</div>';
+    document.getElementById('fhc-legend').innerHTML=''; zfiCompareTable('fhc-tbody','fhc-thead',[],[],null,cfg.fmt,'Month'); return;
+  }
+  const series=_fhcSel.map((p,i)=>({name:displayPlate(p),label:displayPlate(p),color:ZFI_CMP_COLORS[i],
+    values:months.map(mk=>zfiFhcValue(vm.by[p]&&vm.by[p].m[mk],_fhcMetric))}));
+  const ref=_fhcAvg?{name:'Fleet average',values:months.map(mk=>zfiFhcAvg(vm,mk,_fhcMetric))}:null;
+  host.innerHTML=zfiCompareChartSVG(labels,series,{kind:_fhcKind,fmt:cfg.fmt,unit:cfg.unit,ref,width:host.clientWidth,zero:!['kml','l100','costkm'].includes(_fhcMetric)});
+  document.getElementById('fhc-legend').innerHTML=zfiCompareLegend(series,ref,cfg.fmt,cfg.unit);
+  zfiCompareTable('fhc-tbody','fhc-thead',labels,series,ref,cfg.fmt,'Month ('+cfg.unit+')');
+}
+
+/* ── 3) COMPANY COMPARISON (Rental Historical) ────────────────── */
+let _rhcSel=[], _rhcInit=false, _rhcMetric='trips', _rhcRange=12, _rhcKind='line', _rhcAvg=true, _rhcDest='';
+const RHC_METRICS = {
+  trips:{label:'🚚 Trucks / trips',  unit:'trucks', fmt:v=>Math.round(v).toLocaleString('en-US')},
+  cost: {label:'💰 Total cost',      unit:'SAR',    fmt:zfiSar},
+  avg:  {label:'📊 Avg price / truck',unit:'SAR',   fmt:v=>Math.round(v).toLocaleString('en-US')},
+  share:{label:'🥧 Share of spend',  unit:'',       fmt:v=>v.toFixed(1)+'%'}
+};
+
+function zfiCompMonthly(){
+  const out={by:{},months:new Set(),tot:{},all:new Set()};
+  const dests=new Set();
+  STATE.daily.forEach(r=>{
+    const date=parseDate(r['Date']||r['date']); if(!date||isNaN(date)) return;
+    const dest=(r['Destination']||'').trim(), comp=(r['Company']||'').trim();
+    const cost=parseAmount(r['Total Cost (SAR)']||r['Total Cost']||r['Cost']);
+    const trucks=parseAmount(r['Trucks']||1);
+    if(!dest||cost===0||!comp) return;
+    dests.add(dest); out.all.add(comp);
+    if(_rhcDest&&dest!==_rhcDest) return;
+    const mk=getMonthKey(date);
+    out.months.add(mk);
+    const c=out.by[comp]||(out.by[comp]={});
+    const s=c[mk]||(c[mk]={trips:0,cost:0});
+    s.trips+=trucks; s.cost+=cost;
+    const t=out.tot[mk]||(out.tot[mk]={trips:0,cost:0,n:0});
+    t.trips+=trucks; t.cost+=cost;
+  });
+  out.months=[...out.months].sort(); out.dests=[...dests].sort(); out.all=[...out.all].sort();
+  Object.keys(out.tot).forEach(mk=>{ out.tot[mk].n=Object.values(out.by).filter(c=>c[mk]).length; });
+  return out;
+}
+function zfiRhcValue(d, comp, mk, metric){
+  const s=d.by[comp]&&d.by[comp][mk]; if(!s) return null;
+  switch(metric){
+    case 'trips': return s.trips;
+    case 'cost':  return s.cost;
+    case 'avg':   return s.trips>0?s.cost/s.trips:null;
+    case 'share': return d.tot[mk]&&d.tot[mk].cost>0?s.cost/d.tot[mk].cost*100:null;
+  }
+  return null;
+}
+function zfiRhcAvg(d, mk, metric){
+  const t=d.tot[mk]; if(!t||!t.n) return null;
+  if(metric==='trips') return t.trips/t.n;
+  if(metric==='cost')  return t.cost/t.n;
+  if(metric==='avg')   return t.trips>0?t.cost/t.trips:null;
+  return null;
+}
+function rhcAdd(c){ if(!c||_rhcSel.includes(c)||_rhcSel.length>=5) return; _rhcSel.push(c); renderRHCompare(); }
+function rhcRemove(i){ _rhcSel.splice(i,1); renderRHCompare(); }
+function rhcClear(){ _rhcSel=[]; renderRHCompare(); }
+function rhcMetric(m){ _rhcMetric=m; renderRHCompare(); }
+function rhcRange(n){ _rhcRange=parseInt(n,10)||0; renderRHCompare(); }
+function rhcKind(k){ _rhcKind=k; renderRHCompare(); }
+function rhcAvgToggle(on){ _rhcAvg=!!on; renderRHCompare(); }
+function rhcDest(v){ _rhcDest=v||''; renderRHCompare(); }
+
+function renderRHCompare(){
+  const host=document.getElementById('rhc-chart'); if(!host) return;
+  const d=zfiCompMonthly();
+  const comps=d.all;
+  if(!_rhcInit && comps.length){
+    _rhcInit=true;
+    _rhcSel=comps.map(c=>({c,t:Object.values(d.by[c]||{}).reduce((a,s)=>a+s.cost,0)})).sort((a,b)=>b.t-a.t).slice(0,3).map(x=>x.c);
+  }
+  const pick=document.getElementById('rhc-pick');
+  if(pick){
+    pick.innerHTML='<option value="">'+(_rhcSel.length>=5?'Maximum 5 reached':'+ Add company…')+'</option>'+
+      comps.filter(c=>!_rhcSel.includes(c)).map(c=>`<option value="${zfiEsc(c)}">${zfiEsc(c)}</option>`).join('');
+    pick.disabled=_rhcSel.length>=5;
+  }
+  const ds=document.getElementById('rhc-dest');
+  if(ds){
+    ds.innerHTML='<option value="">All destinations</option>'+d.dests.map(x=>`<option value="${zfiEsc(x)}"${x===_rhcDest?' selected':''}>${zfiEsc(x)}</option>`).join('');
+  }
+  const chips=document.getElementById('rhc-chips');
+  if(chips) chips.innerHTML=zfiSelChips(_rhcSel,c=>c,'rhcRemove');
+  Object.keys(RHC_METRICS).forEach(k=>{ const b=document.getElementById('rhcm-'+k); if(b) b.className=(k===_rhcMetric?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'); });
+  ['line','bar'].forEach(k=>{ const b=document.getElementById('rhck-'+k); if(b) b.className=(k===_rhcKind?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'); });
+  const rs=document.getElementById('rhc-range'); if(rs) rs.value=String(_rhcRange);
+  const ac=document.getElementById('rhc-avg'); if(ac){ ac.checked=_rhcAvg; ac.disabled=_rhcMetric==='share'; }
+
+  const cfg=RHC_METRICS[_rhcMetric];
+  let months=d.months; if(_rhcRange>0) months=months.slice(-_rhcRange);
+  const labels=months.map(zfiMonthLabel);
+  if(!_rhcSel.length){
+    host.innerHTML='<div style="text-align:center;color:var(--text3);padding:34px 0;font-size:12px">Pick up to 5 companies to compare them month by month</div>';
+    document.getElementById('rhc-legend').innerHTML=''; zfiCompareTable('rhc-tbody','rhc-thead',[],[],null,cfg.fmt,'Month'); return;
+  }
+  const series=_rhcSel.map((c,i)=>({name:c,label:c,color:ZFI_CMP_COLORS[i],values:months.map(mk=>zfiRhcValue(d,c,mk,_rhcMetric))}));
+  const refName=_rhcMetric==='avg'?'All companies (avg price)':'Average company';
+  const ref=(_rhcAvg&&_rhcMetric!=='share')?{name:refName,values:months.map(mk=>zfiRhcAvg(d,mk,_rhcMetric))}:null;
+  host.innerHTML=zfiCompareChartSVG(labels,series,{kind:_rhcKind,fmt:cfg.fmt,unit:cfg.unit,ref,width:host.clientWidth,zero:_rhcMetric!=='avg'});
+  document.getElementById('rhc-legend').innerHTML=zfiCompareLegend(series,ref,cfg.fmt,cfg.unit);
+  zfiCompareTable('rhc-tbody','rhc-thead',labels,series,ref,cfg.fmt,'Month ('+cfg.unit+')');
+}
+
+
+/* redraw at the right width when the window is resized or the page is opened */
+(function(){
+  let t=null;
+  const redraw=()=>{
+    try{
+      const a=document.getElementById('fhc-chart'), b=document.getElementById('rhc-chart');
+      if(a&&a.clientWidth) renderFHCompare();
+      if(b&&b.clientWidth) renderRHCompare();
+    }catch(e){}
+  };
+  window.addEventListener('resize',()=>{ clearTimeout(t); t=setTimeout(redraw,150); });
+  const _nav=window.navigate;
+  if(typeof _nav==='function') window.navigate=function(){ const r=_nav.apply(this,arguments); setTimeout(redraw,30); return r; };
+})();
+
 function renderAll() {
+  window._zfiVM=null;
+  try{ zfiFlagFuelKm(); }catch(e){ console.warn("km check skipped:",e); }
   renderCurrentMonth();
   renderFleetKPIs();
   renderFleetHistKPIs();
@@ -10233,6 +10771,7 @@ function renderAll() {
   renderFHFuelLog();
   renderRentalHist();
   renderRHTLineChart();
+  try{ zfiRenderKmBanner(); renderFHCompare(); renderRHCompare(); }catch(e){ console.warn("v2 charts:",e); }
   renderHistorical();
   renderRental();
   renderFleetGrid();
@@ -10385,6 +10924,17 @@ function toggleSidebar() {
   const collapsed = sb.classList.toggle('collapsed');
   if(ov) ov.classList.toggle('visible', !collapsed);
 }
+
+// First-page subtitle: current month, computed from today's date (was hardcoded)
+(function(){
+  function setMtd(){
+    const el = document.getElementById('page-subtitle');
+    if (!el || el.textContent.trim() !== 'MTD') return;
+    const d = new Date();
+    el.textContent = d.toLocaleString('en-US',{month:'long'}) + ' ' + d.getFullYear() + ' MTD';
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setMtd); else setMtd();
+})();
 
 // Auto-close sidebar when nav item clicked
 document.addEventListener('DOMContentLoaded', () => {
